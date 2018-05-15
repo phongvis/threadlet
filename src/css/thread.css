@@ -1,0 +1,17 @@
+.pv-thread .person .label {
+    color: hsl(0, 0%, 60%);
+    width: 80px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-align: right;
+}
+
+.pv-thread .instance circle {
+    fill: hsl(0, 0%, 90%);
+    stroke: hsl(0, 0%, 70%);
+}
+
+.pv-thread .instance.sender circle {
+    fill: hsl(0, 0%, 70%);
+    stroke: hsl(0, 0%, 50%);
+}
