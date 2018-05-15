@@ -10,8 +10,8 @@ document.addEventListener('DOMContentLoaded', function() {
         allTopics,
         threadData;
 
-    d3.json('../../data/long-threads.json').then(data => {
-        threadData = data[0].messages;
+    d3.json('../../data/threads-10.json').then(data => {
+        threadData = data[4].messages;
         threadData.forEach(m => {
             m.time = new Date(m.time);
         });
