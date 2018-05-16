@@ -6,16 +6,26 @@
     text-align: right;
 }
 
-.pv-thread .instance circle {
+.pv-thread .person.hovered .label {
+    color: black;
+}
+
+.pv-thread .person .instance circle {
     fill: hsl(0, 0%, 90%);
     stroke: hsl(0, 0%, 70%);
 }
 
-.pv-thread .instance.sender circle {
+.pv-thread .person .instance.sender circle {
     fill: hsl(0, 0%, 70%);
     stroke: hsl(0, 0%, 50%);
 }
 
 .pv-thread .line {
     stroke: hsl(0, 0%, 70%);
+}
+
+.pv-thread .person.hovered .instance circle,
+.pv-thread .person.hovered .instance.sender circle,
+.pv-thread .line.hovered {
+    stroke: hsl(0, 0%, 30%);
 }

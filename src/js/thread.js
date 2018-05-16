@@ -217,6 +217,15 @@ pv.vis.thread = function() {
             .text(d => d.email.substr(0, d.email.indexOf('@')));
         fo.append('title')
             .text(d => d.email);
+
+        // Hovering person
+        container.on('mouseover', function(d) {
+            d3.select(this).classed('hovered', true);
+            lineContainer.selectAll('.line').filter(l => l.personEmail === d.email).classed('hovered', true);
+        }).on('mouseout', function() {
+            d3.select(this).classed('hovered', false);
+            lineContainer.selectAll('.line').classed('hovered', false);
+        });
     }
 
     function updatePersons(selection) {
