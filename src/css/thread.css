@@ -1,31 +1,69 @@
 .pv-thread .person .label {
-    color: hsl(0, 0%, 60%);
+    color: hsl(0, 0%, 70%);
     width: 80px;
     white-space: nowrap;
     overflow: hidden;
     text-align: right;
 }
 
+.pv-thread .person.sender .label {
+    color: hsl(0, 0%, 40%);
+}
+
+.pv-thread .person.group .label {
+    font-weight: bold;
+}
+
 .pv-thread .person.hovered .label {
     color: black;
 }
 
-.pv-thread .person .instance circle {
+.pv-thread .person .container {
+    fill-opacity: 1e-6;
+}
+
+.pv-thread .person.group {
+    stroke-width: 2px;
+}
+
+.pv-thread .person .instance {
     fill: hsl(0, 0%, 90%);
     stroke: hsl(0, 0%, 70%);
 }
 
-.pv-thread .person .instance.sender circle {
-    fill: hsl(0, 0%, 70%);
+.pv-thread .person .instance.sender {
+    fill: hsl(0, 0%, 60%);
     stroke: hsl(0, 0%, 50%);
+}
+
+.pv-thread .person .instance.bcc {
+    stroke: hsl(0, 0%, 60%);
+    stroke-dasharray: 2,1;
+}
+
+.pv-thread .person.group .instance.bcc {
+    stroke: hsl(0, 0%, 70%);
 }
 
 .pv-thread .line {
     stroke: hsl(0, 0%, 70%);
 }
 
-.pv-thread .person.hovered .instance circle,
-.pv-thread .person.hovered .instance.sender circle,
+.pv-thread .lines.group {
+    stroke-width: 2px;
+}
+
+.pv-thread .line.exclusion {
+    stroke: hsl(0, 0%, 90%);
+}
+
+.pv-thread .line.group.exclusion {
+    stroke-width: 2px;
+}
+
+.pv-thread .person.hovered .instance,
+.pv-thread .person.group.hovered .instance,
+.pv-thread .person.hovered .instance.sender,
 .pv-thread .line.hovered {
     stroke: hsl(0, 0%, 30%);
 }
