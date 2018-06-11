@@ -12,7 +12,7 @@ document.addEventListener('DOMContentLoaded', function() {
         allTopics,
         threadData;
 
-    d3.json('../../data/threads-10.json').then(data => {
+    d3.json('../../data/threads-100.json').then(data => {
         data.forEach(t => {
             t.messages.forEach(m => {
                 m.time = new Date(m.time);
