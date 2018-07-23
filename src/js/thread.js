@@ -16,7 +16,8 @@ pv.vis.thread = function() {
 
     let visWidth = 960, visHeight = 600, // Size of the visualization, including margins
         width, height, // Size of the main content, excluding margins
-        sortGroupsMethod = 'time'; // time/engagement
+        sortGroupsMethod = 'time', // time/engagement
+        scaleMode = 'absolute'; // absolute/relative
 
     /**
      * Accessors.
@@ -45,14 +46,16 @@ pv.vis.thread = function() {
      */
     let visContainer, // Containing the entire visualization
         personContainer,
-        lineContainer;
+        lineContainer,
+        axisContainer;
 
     /**
      * D3.
      */
     const listeners = d3.dispatch('click'),
-        xSeqScale = d3.scaleLinear(),
-        xContScale = d3.scaleLinear();
+        xAbsoluteScale = d3.scaleUtc(),
+        xRelativeScale = d3.scaleLinear(),
+        xAxis = d3.axisBottom().scale(xAbsoluteScale);
 
     const bcc = 'BCC';
 
@@ -64,6 +67,7 @@ pv.vis.thread = function() {
             // Initialize
             if (!this.visInitialized) {
                 visContainer = d3.select(this).append('g').attr('class', 'pv-thread');
+                axisContainer = visContainer.append('g').attr('class', 'axis');
                 lineContainer = visContainer.append('g').attr('class', 'lines');
                 personContainer = visContainer.append('g').attr('class', 'persons');
 
@@ -88,8 +92,9 @@ pv.vis.thread = function() {
         height = visHeight - margin.top - margin.bottom;
 
         visContainer.attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
-        xSeqScale.range([labelWidth, width]);
-        xContScale.range([labelWidth, width]);
+        axisContainer.attr('transform', 'translate(0,' + (height - 30) + ')');
+        xAbsoluteScale.range([labelWidth, width]);
+        xRelativeScale.range([labelWidth, width]);
 
         /**
          * Computation.
@@ -104,7 +109,8 @@ pv.vis.thread = function() {
 
             lineData = buildLineData(groupData);
 
-            xSeqScale.domain([0, data.length - 1]);
+            xAbsoluteScale.domain(d3.extent(data, time));
+            xRelativeScale.domain([0, data.length - 1]);
         }
 
         // Updates that depend on both data and display change
@@ -115,6 +121,8 @@ pv.vis.thread = function() {
         /**
          * Draw.
          */
+        axisContainer.classed('hidden', scaleMode === 'relative').call(xAxis);
+
         const persons = personContainer.selectAll('.person').data(groupData, d => d.id);
         persons.enter().append('g').attr('class', 'person').call(enterPersons)
             .merge(persons).call(updatePersons);
@@ -343,7 +351,7 @@ pv.vis.thread = function() {
             .attr('transform', 'translate(0,' + -margin.top + ')')
             .attr('width', '100%').attr('height', '100%');
 
-        const sort = container.html(`
+        container.html(`
             <div class='group-sort'>
                 Sort Groups
                 <label>
@@ -352,11 +360,27 @@ pv.vis.thread = function() {
                 <label>
                     <input type='radio' value='engagement' name='sortGroups'> Engagement
                 </label>
+            </div>
+            <div class='time-scale'>
+                Time Scale
+                <label>
+                    <input type='radio' value='absolute' name='scaleMode'> Absolute
+                </label>
+                <label>
+                    <input type='radio' value='relative' name='scaleMode'> Relative
+                </label>
             </div>`);
-        sort.select('input[value=time]').node().checked = true;
-        sort.selectAll('input[name=sortGroups]').on('change', function () {
+
+        container.select('input[value=' + sortGroupsMethod + ']').node().checked = true;
+        container.selectAll('input[name=sortGroups]').on('change', function () {
             sortGroupsMethod = this.value;
             sortGroups(groupData, data);
+            update();
+        });
+
+        container.select('input[value=' + scaleMode + ']').node().checked = true;
+        container.selectAll('input[name=scaleMode]').on('change', function () {
+            scaleMode = this.value;
             update();
         });
     }
@@ -473,7 +497,7 @@ pv.vis.thread = function() {
 
     function layoutMessages(messages) {
         messages.forEach((m, i) => {
-            m.x = xSeqScale(i);
+            m.x = scaleMode === 'absolute' ? xAbsoluteScale(time(m)) : xRelativeScale(i);
             m.y = 0;
         });
     }
