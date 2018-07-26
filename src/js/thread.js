@@ -12,7 +12,7 @@ pv.vis.thread = function() {
     const margin = { top: 45, right: 10, bottom: 5, left: 5 },
         radius = 4,
         personHeight = 16,
-        timeIndicatorGap = 40,
+        timeIndicatorGap = 30,
         labelWidth = 90; // this value is also defined in css
 
     let visWidth = 960, visHeight = 600, // Size of the visualization, including margins
@@ -26,6 +26,7 @@ pv.vis.thread = function() {
      * Accessors.
      */
     let messageId = d => d.messageId,
+        personId = d => d.id,
         subject = d => d.subject,
         sender = d => d.sender,
         time = d => d.time,
@@ -39,7 +40,7 @@ pv.vis.thread = function() {
      */
     let data,
         personLookup,
-        groupData,
+        personData,
         lineData,
         dataChanged = true; // True to redo all data-related computations
 
@@ -117,13 +118,13 @@ pv.vis.thread = function() {
          */
         // Updates that depend only on data change
         if (dataChanged) {
-            const personData = buildPersonData(data);
+            const persons = buildPersonData(data);
             addMessageInstances(data);
 
-            groupData = groupPersons(personData);
-            sortGroups(groupData);
+            personData = groupPersons(persons);
+            sortGroups(personData);
 
-            lineData = buildLineData(groupData);
+            lineData = buildLineData(personData);
 
             xAbsoluteScale.domain(d3.extent(data, time));
             xRelativeScale.domain([0, data.length - 1]);
@@ -131,7 +132,7 @@ pv.vis.thread = function() {
 
         // Updates that depend on both data and display change
         updateSelectionHandle();
-        layoutPersons(groupData);
+        layoutPersons(personData);
         layoutMessages(data);
         layoutLines(lineData, data);
 
@@ -140,25 +141,14 @@ pv.vis.thread = function() {
          */
         axisContainer.call(xAxis);
 
-        const personBackgrounds = personBackgroundContainer.selectAll('.person-background').data(groupData, d => d.id);
+        const personBackgrounds = personBackgroundContainer.selectAll('.person-background').data(personData, personId);
         personBackgrounds.enter().append('rect').attr('class', 'person-background hidden')
             .merge(personBackgrounds).call(updatePersonBackgrounds);
         personBackgrounds.exit().transition().attr('opacity', 0).remove();
 
-        const persons = personContainer.selectAll('.person').data(groupData, d => d.id);
-        persons.enter().append('g').attr('class', 'person').call(enterPersons)
-            .merge(persons).call(updatePersons);
-        persons.exit().transition().attr('opacity', 0).remove();
-
-        const lines = lineContainer.selectAll('.line').data(lineData, lineId);
-        lines.enter().append('g').attr('class', 'line').call(enterLines)
-            .merge(lines).call(updateLines);
-        lines.exit().transition().attr('opacity', 0).remove();
-
-        const times = timeContainer.selectAll('.time').data(data, messageId);
-        times.enter().append('g').attr('class', 'time').call(enterTimes)
-            .merge(times).call(updateTimes);
-        times.exit().transition().attr('opacity', 0).remove();
+        pv.enterUpdate(personData, personContainer, enterPersons, updatePersons, personId, 'person');
+        pv.enterUpdate(lineData, lineContainer, enterLines, updateLines, lineId, 'line');
+        pv.enterUpdate(data, timeContainer, enterTimes, updateTimes, messageId, 'time');
 
         // Keep the elements sync. with the data to make the hovering by index work.
         personBackgrounds.order();
@@ -241,7 +231,7 @@ pv.vis.thread = function() {
 
             const identicalPersons = [p].concat(findIdenticalPersons(persons, p));
             if (identicalPersons.length > 1) {
-                const id = identicalPersons[0].id,
+                const id = personId(identicalPersons[0]),
                     g = {
                         id: id,
                         label: 'Group (' + (identicalPersons.length + 1) + ')',
@@ -289,6 +279,10 @@ pv.vis.thread = function() {
         groups.sort((a, b) => f(a, b));
     }
 
+    function compareGroupsById(a, b) {
+        return d3.ascending(personId(a), personId(b));
+    }
+
     function compareGroupsByTime(a, b) {
         // Earlier message comes first. If a pair of messages is the same, compare the next one.
         const aTimes = a.instances.map(m => time(data[m.messageIdx])),
@@ -308,7 +302,7 @@ pv.vis.thread = function() {
             if (b.instances[i].type === bcc) return -1; // bcc last
         }
 
-        return d3.ascending(a.id, b.id);
+        return compareGroupsById(a, b);
     }
 
     function compareGroupsByEngagement(a, b) {
@@ -317,7 +311,7 @@ pv.vis.thread = function() {
             bSentCount = b.instances.filter(d => d.isSender).length,
             aTotal = a.instances.length,
             bTotal = b.instances.length;
-        return bSentCount - aSentCount || bTotal - aTotal || d3.ascending(a.id, b.id);
+        return bSentCount - aSentCount || bTotal - aTotal || compareGroupsById(a, b);
     }
 
     function buildLineData(persons) {
@@ -334,8 +328,8 @@ pv.vis.thread = function() {
             lines.push({
                 sourceIdx: firstMessageIdx,
                 targetIdx: lastMessageIdx,
-                personId: p.id,
-                id: p.id + '-' + firstMessageIdx + '-' + lastMessageIdx,
+                personId: personId(p),
+                id: personId(p) + '-' + firstMessageIdx + '-' + lastMessageIdx,
                 isGroup: p.isGroup
             });
         }
@@ -348,8 +342,8 @@ pv.vis.thread = function() {
                 exclusion: true,
                 sourceIdx: firstIdx,
                 targetIdx: lastIdx,
-                personId: p.id,
-                id: p.id + '-' + firstIdx + '-' + lastIdx + '-exc',
+                personId: personId(p),
+                id: personId(p) + '-' + firstIdx + '-' + lastIdx + '-exc',
                 isGroup: p.isGroup
             });
         }
@@ -404,7 +398,7 @@ pv.vis.thread = function() {
         container.select('input[value=' + sortGroupsMethod + ']').node().checked = true;
         container.selectAll('input[name=group-sort]').on('change', function () {
             sortGroupsMethod = this.value;
-            sortGroups(groupData);
+            sortGroups(personData);
             update();
         });
 
@@ -425,7 +419,7 @@ pv.vis.thread = function() {
         selectionContainer
             .attr('x', -messageWidth / 2)
             .attr('width', width - labelWidth + messageWidth)
-            .attr('height', personHeight * groupData.length);
+            .attr('height', personHeight * personData.length);
     }
 
     function onSelectionMove() {
@@ -538,23 +532,24 @@ pv.vis.thread = function() {
                 .attr('x', d.x - personHeight / 2)
                 .attr('y', 0)
                 .attr('width', personHeight)
-                .attr('height', personHeight * groupData.length);
+                .attr('height', personHeight * personData.length);
 
             // Find the instance closet to the timeline
-            const firstInstanceY = groupData.find(p => p.instances.find(m => m.messageIdx === i)).y;
+            const firstInstanceY = personData.find(p => p.instances.find(m => m.messageIdx === i)).y;
+            const headHeight = 6;
 
             container.select('.head')
-                .attr('d', getLine([[d.tx, d.ty], [d.tx, d.ty + 4]]));
+                .attr('d', getLine([[d.tx, d.ty], [d.tx, d.ty + headHeight]]));
 
             container.select('.main')
-                .attr('d', getCurve([[d.tx, d.ty + 4], timeGrouping ? [d.cx, d.y - 20] : [d.x, d.y - 4]]));
+                .attr('d', getCurve([[d.tx, d.ty + headHeight], timeGrouping ? [d.cx, d.y - 15] : [d.x, d.y - headHeight]]));
 
             container.select('.connector')
                 .classed('hidden', !timeGrouping)
-                .attr('d', getCurve([[d.cx, d.y - 20], [d.x, d.y - 4]]));
+                .attr('d', getCurve([[d.cx, d.y - 15], [d.x, d.y - headHeight]]));
 
             container.select('.tail')
-                .attr('d', getLine([[d.x, d.y - 4], [d.x, longConnector ? firstInstanceY + 4 : d.y]]));
+                .attr('d', getLine([[d.x, d.y - headHeight], [d.x, longConnector ? firstInstanceY + headHeight : d.y]]));
         });
     }
 
