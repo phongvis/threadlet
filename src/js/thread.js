@@ -9,15 +9,17 @@ pv.vis.thread = function() {
     /**
      * Visual configs.
      */
-    const margin = { top: 25, right: 10, bottom: 5, left: 5 },
+    const margin = { top: 45, right: 10, bottom: 5, left: 5 },
         radius = 4,
         personHeight = 16,
+        timeIndicatorGap = 40,
         labelWidth = 90; // this value is also defined in css
 
     let visWidth = 960, visHeight = 600, // Size of the visualization, including margins
         width, height, // Size of the main content, excluding margins
+        messageWidth,
         sortGroupsMethod = 'time', // time/engagement
-        scaleMode = 'absolute'; // absolute/relative
+        timeGrouping = false;
 
     /**
      * Accessors.
@@ -46,8 +48,11 @@ pv.vis.thread = function() {
      */
     let visContainer, // Containing the entire visualization
         personContainer,
+        personBackgroundContainer,
         lineContainer,
-        axisContainer;
+        timeContainer,
+        axisContainer,
+        selectionContainer;
 
     /**
      * D3.
@@ -55,7 +60,9 @@ pv.vis.thread = function() {
     const listeners = d3.dispatch('click'),
         xAbsoluteScale = d3.scaleUtc(),
         xRelativeScale = d3.scaleLinear(),
-        xAxis = d3.axisBottom().scale(xAbsoluteScale);
+        xAxis = d3.axisTop().scale(xAbsoluteScale),
+        timeScale = d3.scaleLinear().range([0.5, 1]),
+        colorScale = d => d3.interpolateGreys(timeScale(time(d)));
 
     const bcc = 'BCC';
 
@@ -67,16 +74,27 @@ pv.vis.thread = function() {
             // Initialize
             if (!this.visInitialized) {
                 visContainer = d3.select(this).append('g').attr('class', 'pv-thread');
-                axisContainer = visContainer.append('g').attr('class', 'axis');
+                personBackgroundContainer = visContainer.append('g').attr('class', 'person-backgrounds');
+                timeContainer = visContainer.append('g').attr('class', 'times');
                 lineContainer = visContainer.append('g').attr('class', 'lines');
                 personContainer = visContainer.append('g').attr('class', 'persons');
+                axisContainer = visContainer.append('g').attr('class', 'axis');
+                selectionContainer = visContainer.append('g').attr('class', 'selection')
+                    .attr('transform', 'translate(' + labelWidth + ',' + timeIndicatorGap + ')')
+                    .append('rect').attr('class', 'background')
+                    .on('mousemove', onSelectionMove)
+                    .on('mouseout', onSelectionOut);
+
+                [personBackgroundContainer, lineContainer, personContainer, timeContainer].forEach(c => {
+                    c.attr('transform', 'translate(0, ' + timeIndicatorGap + ')');
+                });
 
                 addSettings();
 
                 this.visInitialized = true;
             }
 
-            data = _data.sort((a, b) => d3.ascending(time(a), time(b)));
+            data = _data.sort((a, b) => d3.ascending(time(a), time(b)) || d3.ascending(messageId(a), messageId(b)));
             update();
         });
 
@@ -90,9 +108,9 @@ pv.vis.thread = function() {
         // Canvas update
         width = visWidth - margin.left - margin.right;
         height = visHeight - margin.top - margin.bottom;
+        messageWidth = (width - labelWidth) / data.length;
 
         visContainer.attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
-        axisContainer.attr('transform', 'translate(0,' + (height - 30) + ')');
         xAbsoluteScale.range([labelWidth, width]);
         xRelativeScale.range([labelWidth, width]);
 
@@ -105,15 +123,17 @@ pv.vis.thread = function() {
             addMessageInstances(data);
 
             groupData = groupPersons(personData);
-            sortGroups(groupData, data);
+            sortGroups(groupData);
 
             lineData = buildLineData(groupData);
 
             xAbsoluteScale.domain(d3.extent(data, time));
             xRelativeScale.domain([0, data.length - 1]);
+            timeScale.domain(d3.extent(data, time));
         }
 
         // Updates that depend on both data and display change
+        updateSelectionHandle();
         layoutPersons(groupData);
         layoutMessages(data);
         layoutLines(lineData, data);
@@ -121,7 +141,12 @@ pv.vis.thread = function() {
         /**
          * Draw.
          */
-        axisContainer.classed('hidden', scaleMode === 'relative').call(xAxis);
+        axisContainer.call(xAxis);
+
+        const personBackgrounds = personBackgroundContainer.selectAll('.person-background').data(groupData, d => d.id);
+        personBackgrounds.enter().append('rect').attr('class', 'person-background hidden')
+            .merge(personBackgrounds).call(updatePersonBackgrounds);
+        personBackgrounds.exit().transition().attr('opacity', 0).remove();
 
         const persons = personContainer.selectAll('.person').data(groupData, d => d.id);
         persons.enter().append('g').attr('class', 'person').call(enterPersons)
@@ -132,6 +157,14 @@ pv.vis.thread = function() {
         lines.enter().append('g').attr('class', 'line').call(enterLines)
             .merge(lines).call(updateLines);
         lines.exit().transition().attr('opacity', 0).remove();
+
+        const times = timeContainer.selectAll('.time').data(data, messageId);
+        times.enter().append('g').attr('class', 'time').call(enterTimes)
+            .merge(times).call(updateTimes);
+        times.exit().transition().attr('opacity', 0).remove();
+
+        // Keep the elements sync. with the data to make the hovering by index work.
+        personBackgrounds.order();
     }
 
     function buildPersonData(messages) {
@@ -211,7 +244,7 @@ pv.vis.thread = function() {
 
             const identicalPersons = [p].concat(findIdenticalPersons(persons, p));
             if (identicalPersons.length > 1) {
-                const id = identicalPersons.map(d => d.id).join('-'),
+                const id = identicalPersons[0].id,
                     g = {
                         id: id,
                         label: 'Group (' + (identicalPersons.length + 1) + ')',
@@ -254,15 +287,15 @@ pv.vis.thread = function() {
         return results;
     }
 
-    function sortGroups(groups, messages) {
+    function sortGroups(groups) {
         const f = sortGroupsMethod === 'time' ? compareGroupsByTime : compareGroupsByEngagement;
-        groups.sort((a, b) => f(a, b, messages));
+        groups.sort((a, b) => f(a, b));
     }
 
-    function compareGroupsByTime(a, b, messages) {
+    function compareGroupsByTime(a, b) {
         // Earlier message comes first. If a pair of messages is the same, compare the next one.
-        const aTimes = a.instances.map(m => time(messages[m.messageIdx])),
-            bTimes = b.instances.map(m => time(messages[m.messageIdx]));
+        const aTimes = a.instances.map(m => time(data[m.messageIdx])),
+            bTimes = b.instances.map(m => time(data[m.messageIdx]));
 
         for (let i = 0; i < Math.max(aTimes.length, bTimes.length); i++) {
             if (!aTimes[i]) return -1; // a is shorter
@@ -278,16 +311,16 @@ pv.vis.thread = function() {
             if (b.instances[i].type === bcc) return -1; // bcc last
         }
 
-        return 0;
+        return d3.ascending(a.id, b.id);
     }
 
-    function compareGroupsByEngagement(a, b, messages) {
+    function compareGroupsByEngagement(a, b) {
         // Number of sent messages, then number of received messages
         const aSentCount = a.instances.filter(d => d.isSender).length,
             bSentCount = b.instances.filter(d => d.isSender).length,
             aTotal = a.instances.length,
             bTotal = b.instances.length;
-        return bSentCount - aSentCount || bTotal - aTotal;
+        return bSentCount - aSentCount || bTotal - aTotal || d3.ascending(a.id, b.id);
     }
 
     function buildLineData(persons) {
@@ -297,8 +330,7 @@ pv.vis.thread = function() {
     function extractLinesFromPerson(p) {
         // For a person, a line connects consecutive message instances (no other messages in-between)
         let lastMessageIdx = p.instances[0].messageIdx,
-            firstMessageIdx = lastMessageIdx,
-            prevLastMessageIdx = 0;
+            firstMessageIdx = lastMessageIdx;
         const lines = [];
 
         function addLine() {
@@ -349,40 +381,63 @@ pv.vis.thread = function() {
     function addSettings() {
         const container = visContainer.append('foreignObject').attr('class', 'settings')
             .attr('transform', 'translate(0,' + -margin.top + ')')
-            .attr('width', '100%').attr('height', '100%');
+            .attr('width', '100%').attr('height', '25px');
 
         container.html(`
-            <div class='group-sort'>
+            <div class='group-sort' style='margin-right:20px'>
                 Sort Groups
                 <label>
-                    <input type='radio' value='time' name='sortGroups'> Time
+                    <input type='radio' value='time' name='group-sort'> Time
                 </label>
                 <label>
-                    <input type='radio' value='engagement' name='sortGroups'> Engagement
+                    <input type='radio' value='engagement' name='group-sort'> Engagement
                 </label>
             </div>
-            <div class='time-scale'>
-                Time Scale
+            <div class='time-grouping' style='margin-right:20px'>
                 <label>
-                    <input type='radio' value='absolute' name='scaleMode'> Absolute
-                </label>
-                <label>
-                    <input type='radio' value='relative' name='scaleMode'> Relative
+                    <input type='checkbox' name='time-grouping'> Time Grouping
                 </label>
             </div>`);
 
         container.select('input[value=' + sortGroupsMethod + ']').node().checked = true;
-        container.selectAll('input[name=sortGroups]').on('change', function () {
+        container.selectAll('input[name=group-sort]').on('change', function () {
             sortGroupsMethod = this.value;
-            sortGroups(groupData, data);
+            sortGroups(groupData);
             update();
         });
 
-        container.select('input[value=' + scaleMode + ']').node().checked = true;
-        container.selectAll('input[name=scaleMode]').on('change', function () {
-            scaleMode = this.value;
+        container.select('input[name=time-grouping]').node().checked = timeGrouping;
+        container.select('input[name=time-grouping]').on('change', function() {
+            timeGrouping = this.checked;
             update();
         });
+    }
+
+    function updateSelectionHandle() {
+        selectionContainer
+            .attr('x', -messageWidth / 2)
+            .attr('width', width - labelWidth + messageWidth)
+            .attr('height', personHeight * groupData.length);
+    }
+
+    function onSelectionMove() {
+        const x = d3.mouse(this)[0],
+            y = d3.mouse(this)[1];
+
+        // Highlight message
+        const messageIdx = Math.floor((x + messageWidth / 2) / messageWidth);
+        timeContainer.selectAll('.message-background').classed('hidden', (d, i) => messageIdx !== i);
+        timeContainer.selectAll('.time').classed('hovered', (d, i) => messageIdx === i);
+
+        // Highlight person
+        const personIdx = Math.floor(y / personHeight);
+        personBackgroundContainer.selectAll('.person-background').classed('hidden', (d, i) => personIdx !== i);
+    }
+
+    function onSelectionOut() {
+        timeContainer.selectAll('.message-background').classed('hidden', true);
+        timeContainer.selectAll('.time').classed('hovered', false);
+        personBackgroundContainer.selectAll('.person-background').classed('hidden', true);
     }
 
     function enterPersons(selection) {
@@ -390,25 +445,10 @@ pv.vis.thread = function() {
             .attr('transform', d => 'translate(' + d.x + ',' + d.y + ')')
             .attr('opacity', 0);
 
-        const fo = container.append('foreignObject').attr('width', '100%').attr('height', '100%');
-
-        fo.append('xhtml:div').attr('class', 'label')
-            .text(d => d.label);
-        fo.append('title')
-            .text(d => d.title);
-
         container.append('g').attr('class', 'instances');
 
-        // Hovering person
-        // - on a dummy transparent rectangle to make it highlight even when hovering void space
-        container.append('rect').attr('class', 'container')
-            .on('mouseover', function(d) {
-                d3.select(this.parentNode).classed('hovered', true);
-                lineContainer.selectAll('.line').filter(l => l.personId === d.id).classed('hovered', true);
-            }).on('mouseout', function() {
-                d3.select(this.parentNode).classed('hovered', false);
-                lineContainer.selectAll('.line').classed('hovered', false);
-            });
+        const fo = container.append('foreignObject').attr('width', '100%').attr('height', personHeight + 'px');
+        fo.append('xhtml:div').attr('class', 'label');
     }
 
     function updatePersons(selection) {
@@ -419,12 +459,12 @@ pv.vis.thread = function() {
                 .attr('transform', 'translate(' + d.x + ',' + d.y + ')')
                 .attr('opacity', 1);
 
-            container.select('.container')
-                .attr('width', width)
-                .attr('height', personHeight);
-
             container.classed('group', d.isGroup);
             container.classed('sender', d.isSender);
+
+            container.select('.label')
+                .text(d.label)
+                .attr('title', d.title);
 
             // Message instances
             layoutInstances(d.instances);
@@ -435,6 +475,16 @@ pv.vis.thread = function() {
         });
     }
 
+    function updatePersonBackgrounds(selection) {
+        selection.each(function(d) {
+            d3.select(this)
+                .attr('transform', 'translate(' + d.x + ',' + d.y + ')')
+                .attr('y', -1)
+                .attr('width', width + messageWidth / 2)
+                .attr('height', personHeight);
+        });
+    }
+
     function enterInstances(selection) {
         const container = selection
             .attr('transform', d => 'translate(' + d.x + ',' + d.y + ')')
@@ -442,11 +492,6 @@ pv.vis.thread = function() {
 
         container.append('circle')
             .attr('r', radius);
-        // container.append('rect')
-        //     .attr('x', -radius)
-        //     .attr('y', -radius)
-        //     .attr('width', radius * 2)
-        //     .attr('height', radius * 2);
     }
 
     function updateInstances(selection) {
@@ -460,6 +505,57 @@ pv.vis.thread = function() {
             container.classed('sender', d.isSender);
             container.classed('bcc', type(d) === bcc);
         });
+    }
+
+    function enterTimes(selection) {
+        const container = selection
+            .attr('opacity', 0);
+
+        container.append('rect').attr('class', 'message-background hidden');
+
+        container.append('path').attr('class', 'head');
+        container.append('path').attr('class', 'main');
+        container.append('path').attr('class', 'connector');
+        container.append('path').attr('class', 'tail');
+
+        // container.selectAll('path')
+        //     .style('stroke', colorScale);
+    }
+
+    function updateTimes(selection) {
+        selection.each(function(d) {
+            const container = d3.select(this);
+
+            container.transition()
+                .attr('opacity', 1);
+
+            container.select('.message-background')
+                .attr('x', d.x - messageWidth / 2)
+                .attr('y', 0)
+                .attr('width', messageWidth)
+                .attr('height', personHeight * groupData.length);
+
+            container.select('.head')
+                .attr('d', getLine([[d.tx, d.ty], [d.tx, d.ty + 4]]));
+
+            container.select('.main')
+                .attr('d', getCurve([[d.tx, d.ty + 4], timeGrouping ? [d.cx, d.y - 20] : [d.x, d.y - 4]]));
+
+            container.select('.connector')
+                .classed('hidden', !timeGrouping)
+                .attr('d', getCurve([[d.cx, d.y - 20], [d.x, d.y - 4]]));
+
+            container.select('.tail')
+                .attr('d', getLine([[d.x, d.y - 4], [d.x, d.y]]));
+        });
+    }
+
+    function getLine(points) {
+        return d3.line()(points);
+    }
+
+    function getCurve(points) {
+        return d3.linkVertical()({ source: points[0], target: points[1] });
     }
 
     function enterLines(selection) {
@@ -496,10 +592,38 @@ pv.vis.thread = function() {
     }
 
     function layoutMessages(messages) {
+        const minGap = 1;
+        let currentGroup = [];
+
+        function assignGroupMean(g) {
+            const cx = d3.mean(g, m => m.x);
+            g.forEach(m => {
+                m.cx = cx;
+            });
+        }
+
         messages.forEach((m, i) => {
-            m.x = scaleMode === 'absolute' ? xAbsoluteScale(time(m)) : xRelativeScale(i);
-            m.y = 0;
+            m.x = xRelativeScale(i);
+            m.y = 4;
+            m.tx = xAbsoluteScale(time(m)) + 0.5;
+            m.ty = 1 - timeIndicatorGap;
+
+            // If the distance between this timestamp and the previous timestamp is less than a given threshold,
+            // add to the current group.
+            if (i === 0) {
+                currentGroup.push(m);
+            } else {
+                if (m.tx - messages[i - 1].tx < minGap) {
+                    currentGroup.push(m);
+                } else {
+                    assignGroupMean(currentGroup);
+                    currentGroup = [m];
+                }
+            }
         });
+
+        // Last group
+        assignGroupMean(currentGroup);
     }
 
     function layoutInstances(instances) {

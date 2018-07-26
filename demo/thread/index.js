@@ -8,9 +8,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Data
     const threadIdx = 4;
 
-    let allSessions,
-        allTopics,
-        threadData;
+    let threadData;
 
     d3.json('../../data/threads-10.json').then(data => {
         data.forEach(t => {

@@ -19,7 +19,6 @@ text {
     font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
     font-size: 11px;
     fill: hsl(0, 0%, 60%);
-    dominant-baseline: text-before-edge;
 }
 
 /* Brush */
