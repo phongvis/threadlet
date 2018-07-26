@@ -19,7 +19,8 @@ pv.vis.thread = function() {
         width, height, // Size of the main content, excluding margins
         messageWidth,
         sortGroupsMethod = 'time', // time/engagement
-        timeGrouping = false;
+        timeGrouping = false,
+        longConnector = false;
 
     /**
      * Accessors.
@@ -37,7 +38,6 @@ pv.vis.thread = function() {
      * Data binding to DOM elements.
      */
     let data,
-        personData,
         personLookup,
         groupData,
         lineData,
@@ -60,9 +60,7 @@ pv.vis.thread = function() {
     const listeners = d3.dispatch('click'),
         xAbsoluteScale = d3.scaleUtc(),
         xRelativeScale = d3.scaleLinear(),
-        xAxis = d3.axisTop().scale(xAbsoluteScale),
-        timeScale = d3.scaleLinear().range([0.5, 1]),
-        colorScale = d => d3.interpolateGreys(timeScale(time(d)));
+        xAxis = d3.axisTop().scale(xAbsoluteScale);
 
     const bcc = 'BCC';
 
@@ -108,18 +106,18 @@ pv.vis.thread = function() {
         // Canvas update
         width = visWidth - margin.left - margin.right;
         height = visHeight - margin.top - margin.bottom;
-        messageWidth = (width - labelWidth) / data.length;
+        messageWidth = (width - labelWidth) / (data.length - 1);
 
         visContainer.attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
-        xAbsoluteScale.range([labelWidth, width]);
-        xRelativeScale.range([labelWidth, width]);
+        xAbsoluteScale.rangeRound([labelWidth, width]);
+        xRelativeScale.rangeRound([labelWidth, width]);
 
         /**
          * Computation.
          */
         // Updates that depend only on data change
         if (dataChanged) {
-            personData = buildPersonData(data);
+            const personData = buildPersonData(data);
             addMessageInstances(data);
 
             groupData = groupPersons(personData);
@@ -129,7 +127,6 @@ pv.vis.thread = function() {
 
             xAbsoluteScale.domain(d3.extent(data, time));
             xRelativeScale.domain([0, data.length - 1]);
-            timeScale.domain(d3.extent(data, time));
         }
 
         // Updates that depend on both data and display change
@@ -397,6 +394,11 @@ pv.vis.thread = function() {
                 <label>
                     <input type='checkbox' name='time-grouping'> Time Grouping
                 </label>
+            </div>
+            <div class='long-connector' style='margin-right:20px'>
+                <label>
+                    <input type='checkbox' name='long-connector'> Long Connector
+                </label>
             </div>`);
 
         container.select('input[value=' + sortGroupsMethod + ']').node().checked = true;
@@ -409,6 +411,12 @@ pv.vis.thread = function() {
         container.select('input[name=time-grouping]').node().checked = timeGrouping;
         container.select('input[name=time-grouping]').on('change', function() {
             timeGrouping = this.checked;
+            update();
+        });
+
+        container.select('input[name=long-connector]').node().checked = longConnector;
+        container.select('input[name=long-connector]').on('change', function() {
+            longConnector = this.checked;
             update();
         });
     }
@@ -517,23 +525,23 @@ pv.vis.thread = function() {
         container.append('path').attr('class', 'main');
         container.append('path').attr('class', 'connector');
         container.append('path').attr('class', 'tail');
-
-        // container.selectAll('path')
-        //     .style('stroke', colorScale);
     }
 
     function updateTimes(selection) {
-        selection.each(function(d) {
+        selection.each(function(d, i) {
             const container = d3.select(this);
 
             container.transition()
                 .attr('opacity', 1);
 
             container.select('.message-background')
-                .attr('x', d.x - messageWidth / 2)
+                .attr('x', d.x - personHeight / 2)
                 .attr('y', 0)
-                .attr('width', messageWidth)
+                .attr('width', personHeight)
                 .attr('height', personHeight * groupData.length);
+
+            // Find the instance closet to the timeline
+            const firstInstanceY = groupData.find(p => p.instances.find(m => m.messageIdx === i)).y;
 
             container.select('.head')
                 .attr('d', getLine([[d.tx, d.ty], [d.tx, d.ty + 4]]));
@@ -546,7 +554,7 @@ pv.vis.thread = function() {
                 .attr('d', getCurve([[d.cx, d.y - 20], [d.x, d.y - 4]]));
 
             container.select('.tail')
-                .attr('d', getLine([[d.x, d.y - 4], [d.x, d.y]]));
+                .attr('d', getLine([[d.x, d.y - 4], [d.x, longConnector ? firstInstanceY + 4 : d.y]]));
         });
     }
 
