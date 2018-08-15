@@ -1,4 +1,5 @@
 # threadlet
 *Visual exploration of email threads.*
 
-- Explore a single thread: [demo](https://phongvis.github.io/threadlet/demo/thread/)
+- [A single thread](https://phongvis.github.io/threadlet/demo/thread/)
+- [Thread features and messages](https://phongvis.github.io/threadlet/demo/threadall/)
