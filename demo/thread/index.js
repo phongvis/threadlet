@@ -35,7 +35,7 @@ document.addEventListener('DOMContentLoaded', function() {
             .height(window.innerHeight - 20);
 
         // Update size of the vis container and redraw
-        d3.select('.pv-vis-demo')
+        d3.select('.threadlet-detail')
             .attr('width', window.innerWidth)
             .attr('height', window.innerHeight - 20)
             .datum(threadData)
@@ -43,7 +43,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function buildThreadDropdown(data) {
-        const select = document.querySelector('#threadSelect');
+        const select = document.querySelector('.threadlet-select');
         data.forEach((d, i) => {
             select.options.add(new Option(d.threadId + ' (' + d.messages.length + ' messages)', i));
         });

@@ -1,7 +1,6 @@
-body {
-    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-    font-size: 11px;
-    cursor: default;
+/* --- General --- */
+* {
+    box-sizing: border-box;
 }
 
 html, body {
@@ -9,18 +8,70 @@ html, body {
     height: 100%;
     margin: 0;
     padding: 0;
-}
-
-svg {
-    display: block;
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-size: 12px;
+    cursor: default;
+    overflow: hidden;
 }
 
 text {
     font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-    font-size: 11px;
+    font-size: 12px;
     fill: hsl(0, 0%, 60%);
 }
 
+/* --- General --- */
+
+/* --- Dashboard --- */
+.vis {
+    width: 100%;
+    height: 100%;
+    background-color: white;
+    border: 1px solid hsl(0, 0%, 80%);
+    border-radius: 3px;
+}
+
+.vis-header {
+    background-color: hsl(0, 0%, 90%);
+    padding: 1px 2px;
+    height: 20px;
+}
+
+.vis-header .title {
+    font-family: Roboto, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-size: 14px;
+    float: left;
+    text-transform: uppercase;
+    color: hsl(0, 0%, 25%);
+    margin-top: 1px;
+}
+
+.settings {
+    font-size: 11px;
+}
+
+.settings .setting {
+    margin-left: 15px;
+    margin-top: -1px;
+    float: right;
+}
+
+.settings label {
+    margin-right: 3px;
+    margin-left: 3px;
+}
+
+.settings .setting .btn {
+    padding: 1px 0;
+}
+
+.hidden {
+    display: none;
+}
+
+/* --- Dashboard --- */
+
+/* --- D3 --- */
 /* Brush */
 .brush .selection {
     fill-opacity: 0.2;
@@ -32,9 +83,12 @@ text {
 .x-axis path,
 .y-axis path {
     stroke: hsl(0, 0%, 60%);
+    shape-rendering: crispEdges;
 }
 
-.axis text {
+.axis text,
+.x-axis text,
+.y-axis text {
     font-size: 10px;
 }
 
@@ -49,11 +103,4 @@ rect {
     stroke: hsl(0, 0%, 60%);
 }
 
-.settings div {
-    display: inline;
-    margin-right: 10px;
-}
-
-.hidden {
-    display: none;
-}
+/* --- D3 --- */

@@ -12,11 +12,12 @@ pv.vis.thread = function() {
     const margin = { top: 45, right: 10, bottom: 5, left: 5 },
         radius = 4,
         personHeight = 16,
-        timeIndicatorGap = 30,
+        timeIndicatorGap = 40,
         labelWidth = 90; // this value is also defined in css
 
     let visWidth = 960, visHeight = 600, // Size of the visualization, including margins
         width, height, // Size of the main content, excluding margins
+        visTitle = 'Thread Messages',
         messageWidth,
         sortGroupsMethod = 'time', // time/engagement
         timeGrouping = false,
@@ -72,7 +73,8 @@ pv.vis.thread = function() {
         selection.each(function(_data) {
             // Initialize
             if (!this.visInitialized) {
-                visContainer = d3.select(this).append('g').attr('class', 'pv-thread');
+                const container = d3.select(this).append('g').attr('class', 'pv-thread');
+                visContainer = container.append('g').attr('class', 'main-vis');
                 personBackgroundContainer = visContainer.append('g').attr('class', 'person-backgrounds');
                 timeContainer = visContainer.append('g').attr('class', 'times');
                 lineContainer = visContainer.append('g').attr('class', 'lines');
@@ -88,7 +90,7 @@ pv.vis.thread = function() {
                     c.attr('transform', 'translate(0, ' + timeIndicatorGap + ')');
                 });
 
-                addSettings();
+                addSettings(container);
 
                 this.visInitialized = true;
             }
@@ -369,13 +371,14 @@ pv.vis.thread = function() {
         return lines;
     }
 
-    function addSettings() {
-        const container = visContainer.append('foreignObject').attr('class', 'settings')
-            .attr('transform', 'translate(0,' + -margin.top + ')')
-            .attr('width', '100%').attr('height', '25px');
+    function addSettings(container) {
+        container = container.append('foreignObject').attr('class', 'settings')
+            .attr('width', '100%').attr('height', '20px')
+            .append('xhtml:div').attr('class', 'vis-header');
 
         container.html(`
-            <div class='group-sort' style='margin-right:20px'>
+            <div class='title'>${visTitle}</div>
+            <div class='setting group-sort'>
                 Sort Groups
                 <label>
                     <input type='radio' value='time' name='group-sort'> Time
@@ -384,12 +387,12 @@ pv.vis.thread = function() {
                     <input type='radio' value='engagement' name='group-sort'> Engagement
                 </label>
             </div>
-            <div class='time-grouping' style='margin-right:20px'>
+            <div class='setting time-grouping'>
                 <label>
                     <input type='checkbox' name='time-grouping'> Time Grouping
                 </label>
             </div>
-            <div class='long-connector' style='margin-right:20px'>
+            <div class='setting long-connector'>
                 <label>
                     <input type='checkbox' name='long-connector'> Long Connector
                 </label>

@@ -1,0 +1,25 @@
+.pv-threadall .feature .label {
+    font-weight: bold;
+    fill: black;
+    text-anchor: middle;
+    dominant-baseline: text-before-edge;
+}
+
+.pv-threadall .thread {
+    opacity: 0.5;
+}
+
+.pv-threadall .thread.brushed {
+    fill: orange;
+    opacity: 1;
+}
+
+.pv-threadall .thread.hovered {
+    fill: red;
+    opacity: 1;
+}
+
+.pv-threadall .brush .selection {
+    fill: orange;
+    cursor: default;
+}

@@ -59,7 +59,7 @@
 
 .pv-thread .time {
     fill: none;
-    stroke: hsl(0, 0%, 60%);
+    stroke: hsl(0, 0%, 50%);
     stroke-opacity: 0.3;
 }
 
@@ -67,6 +67,10 @@
     stroke: #ffcc99;
     stroke-opacity: 1;
     stroke-width: 2;
+}
+
+.pv-thread .time .head {
+    stroke-width: 2px;
 }
 
 .pv-thread .message-background,
