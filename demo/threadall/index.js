@@ -3,10 +3,16 @@ document.addEventListener('DOMContentLoaded', function() {
     const featureContainer = d3.select('.threadlet-features'),
         featureVis = pv.vis.threadall()
             .on('click', function(d) {
-                detailData = d.messages;
-                redrawDetail(true);
+                overviewData = detailData = d.messages;
+                // redrawView(overviewContainer, overviewVis, overviewData, true);
+                redrawView(detailContainer, detailVis, detailData, true);
             });
     let featureData = [];
+
+    // Thread Overview
+    const overviewContainer = d3.select('.threadlet-some'),
+        overviewVis = pv.vis.threadsome();
+    let overviewData;
 
     // Thread Messages
     const detailContainer = d3.select('.threadlet-detail'),
@@ -34,35 +40,30 @@ document.addEventListener('DOMContentLoaded', function() {
             t.messages.forEach(m => {
                 m.time = new Date(m.time);
             });
+
+            // Starting time of the thread
+            t.time = t.messages[0].time;
         });
 
-        detailData = featureData.threads[0].messages;
+        overviewData = detailData = featureData.threads[0].messages;
 
-        // Build the vis
+        // Build the vises
         update();
     });
 
     /**
-     * Updates vis when window changed.
+     * Updates vises when window changed.
      */
     function update() {
-        redrawFeatures();
-        redrawDetail();
+        redrawView(featureContainer, featureVis, featureData);
+        // redrawView(overviewContainer, overviewVis, overviewData);
+        redrawView(detailContainer, detailVis, detailData);
     }
 
-    function assignVisDimensions(selector, vis) {
-        const rect = pv.getContentRect(selector.node());
+    function redrawView(container, vis, data, invalidated) {
+        const rect = pv.getContentRect(container.node());
         vis.width(rect[0]).height(rect[1]);
-    }
-
-    function redrawFeatures() {
-        assignVisDimensions(featureContainer, featureVis);
-        featureContainer.datum(featureData).call(featureVis);
-    }
-
-    function redrawDetail(invalidated) {
-        assignVisDimensions(detailContainer, detailVis);
-        if (invalidated) detailVis.invalidate();
-        detailContainer.datum(detailData).call(detailVis);
+        if (invalidated) vis.invalidate();
+        container.datum(data).call(vis);
     }
 });

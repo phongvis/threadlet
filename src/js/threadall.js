@@ -21,7 +21,8 @@ pv.vis.threadall = function() {
      */
     let threadId = d => d.threadId,
         featureId = d => d.name,
-        featureLabel = d => d.label;
+        featureLabel = d => d.label,
+        time = d => d.time;
 
     /**
      * Data binding to DOM elements.
@@ -40,7 +41,8 @@ pv.vis.threadall = function() {
      * D3.
      */
     const listeners = d3.dispatch('click'),
-        featureScale = d3.scaleBand().paddingInner(0.1);
+        featureScale = d3.scaleBand().paddingInner(0.2),
+        yScale = d3.scaleLinear();
 
     const jitterLookup = {}; // Random noise adding to threads to avoid overplotting
     let query = {};
@@ -81,6 +83,7 @@ pv.vis.threadall = function() {
 
         visContainer.attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
         featureScale.range([0, width]);
+        yScale.range([0, -maxBarHeight]);
 
         /**
          * Computation.
@@ -88,6 +91,7 @@ pv.vis.threadall = function() {
         // Updates that depend only on data change
         if (dataChanged) {
             featureScale.domain(d3.range(featureData.length));
+            yScale.domain(d3.extent(threadData, time));
 
             threadData.forEach(t => {
                 featureData.forEach(f => {
@@ -171,9 +175,16 @@ pv.vis.threadall = function() {
             container.select('.brush').call(d.brush);
 
             // Thread dots
-            const data = threadData.map(x => ({ id: threadId(x), feature: featureId(d), value: x[featureId(d)] }));
+            const data = threadData.map(x => ({
+                id: threadId(x),
+                feature: featureId(d),
+                value: x[featureId(d)],
+                time: time(x),
+            }));
+
             layoutThreads(data, d);
-            pv.enterUpdate(data, d3.select(this), enterThreads, updateThreads, threadId, 'thread');
+
+            pv.enterUpdate(data, d3.select(this), enterThreads, updateThreads, d => d.id, 'thread');
         });
     }
 
@@ -213,7 +224,8 @@ pv.vis.threadall = function() {
     function layoutThreads(data, f) {
         data.forEach(d => {
             d.x = f.scale(d.value);
-            d.y = -jitterLookup[d.id + '-' + featureId(f)] * maxBarHeight;
+            // d.y = -jitterLookup[d.id + '-' + featureId(f)] * maxBarHeight;
+            d.y = yScale(time(d));
         });
     }
 
