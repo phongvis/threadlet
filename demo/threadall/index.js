@@ -2,22 +2,28 @@ document.addEventListener('DOMContentLoaded', function() {
     // Thread Features
     const featureContainer = d3.select('.threadlet-features'),
         featureVis = pv.vis.threadall()
-            .on('click', function(d) {
-                overviewData = detailData = d.messages;
-                // redrawView(overviewContainer, overviewVis, overviewData, true);
+            .on('brush', function(ids) {
+                overviewData = featureData.threads.filter(t => ids.includes(t.threadId));
+                redrawView(overviewContainer, overviewVis, overviewData, true);
+            }).on('click', function(d) {
+                detailData = d.messages;
                 redrawView(detailContainer, detailVis, detailData, true);
             });
     let featureData = [];
 
     // Thread Overview
     const overviewContainer = d3.select('.threadlet-some'),
-        overviewVis = pv.vis.threadsome();
-    let overviewData;
+        overviewVis = pv.vis.threadsome()
+            .on('click', function(d) {
+                detailData = d.messages;
+                redrawView(detailContainer, detailVis, detailData, true);
+            });
+    let overviewData = [];
 
     // Thread Messages
     const detailContainer = d3.select('.threadlet-detail'),
         detailVis = pv.vis.thread();
-    let detailData;
+    let detailData = [];
 
     // Make the vis responsive to window resize
     window.onresize = _.throttle(update, 100);
@@ -45,7 +51,8 @@ document.addEventListener('DOMContentLoaded', function() {
             t.time = t.messages[0].time;
         });
 
-        overviewData = detailData = featureData.threads[0].messages;
+        // overviewData = featureData.threads.slice(0, 3);
+        // detailData = featureData.threads[0].messages;
 
         // Build the vises
         update();
@@ -56,7 +63,7 @@ document.addEventListener('DOMContentLoaded', function() {
      */
     function update() {
         redrawView(featureContainer, featureVis, featureData);
-        // redrawView(overviewContainer, overviewVis, overviewData);
+        redrawView(overviewContainer, overviewVis, overviewData);
         redrawView(detailContainer, detailVis, detailData);
     }
 

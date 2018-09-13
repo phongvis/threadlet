@@ -13,15 +13,15 @@ pv.vis.thread = function() {
         radius = 4,
         personHeight = 16,
         timeIndicatorGap = 40,
-        labelWidth = 90; // this value is also defined in css
+        labelWidth = 90; // This value is also defined in css
 
     let visWidth = 960, visHeight = 600, // Size of the visualization, including margins
         width, height, // Size of the main content, excluding margins
         visTitle = 'Thread Messages',
         messageWidth,
         sortGroupsMethod = 'time', // time/engagement
-        timeGrouping = false,
-        longConnector = false;
+        timeGrouping = true,
+        longConnector = true;
 
     /**
      * Accessors.
@@ -141,7 +141,7 @@ pv.vis.thread = function() {
         /**
          * Draw.
          */
-        axisContainer.call(xAxis);
+        if (data.length) axisContainer.call(xAxis);
 
         const personBackgrounds = personBackgroundContainer.selectAll('.person-background').data(personData, personId);
         personBackgrounds.enter().append('rect').attr('class', 'person-background hidden')
@@ -386,16 +386,6 @@ pv.vis.thread = function() {
                 <label>
                     <input type='radio' value='engagement' name='group-sort'> Engagement
                 </label>
-            </div>
-            <div class='setting time-grouping'>
-                <label>
-                    <input type='checkbox' name='time-grouping'> Time Grouping
-                </label>
-            </div>
-            <div class='setting long-connector'>
-                <label>
-                    <input type='checkbox' name='long-connector'> Long Connector
-                </label>
             </div>`);
 
         container.select('input[value=' + sortGroupsMethod + ']').node().checked = true;
@@ -405,17 +395,29 @@ pv.vis.thread = function() {
             update();
         });
 
-        container.select('input[name=time-grouping]').node().checked = timeGrouping;
-        container.select('input[name=time-grouping]').on('change', function() {
-            timeGrouping = this.checked;
-            update();
-        });
+        // Not used
+        // <div class='setting long-connector'>
+        //     <label>
+        //         <input type='checkbox' name='long-connector'> Long Connector
+        //     </label>
+        // </div>
+        // <div class='setting time-grouping'>
+        //     <label>
+        //         <input type='checkbox' name='time-grouping'> Time Grouping
+        //     </label>
+        // </div>
 
-        container.select('input[name=long-connector]').node().checked = longConnector;
-        container.select('input[name=long-connector]').on('change', function() {
-            longConnector = this.checked;
-            update();
-        });
+        // container.select('input[name=time-grouping]').node().checked = timeGrouping;
+        // container.select('input[name=time-grouping]').on('change', function() {
+        //     timeGrouping = this.checked;
+        //     update();
+        // });
+
+        // container.select('input[name=long-connector]').node().checked = longConnector;
+        // container.select('input[name=long-connector]').on('change', function() {
+        //     longConnector = this.checked;
+        //     update();
+        // });
     }
 
     function updateSelectionHandle() {

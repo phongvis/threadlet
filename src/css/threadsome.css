@@ -1,25 +1,73 @@
-.pv-threadall .feature .label {
+.pv-threadsome .person .label {
+    color: hsl(0, 0%, 70%);
+    width: 80px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-align: right;
+}
+
+.pv-threadsome .person.sender .label {
+    color: hsl(0, 0%, 40%);
+}
+
+.pv-threadsome .person.group .label {
     font-weight: bold;
-    fill: black;
-    text-anchor: middle;
-    dominant-baseline: text-before-edge;
 }
 
-.pv-threadall .thread {
-    opacity: 0.5;
+.pv-threadsome .person.hovered .label {
+    color: black;
 }
 
-.pv-threadall .thread.brushed {
-    fill: orange;
-    opacity: 1;
+.pv-threadsome .person.group {
+    stroke-width: 2px;
 }
 
-.pv-threadall .thread.hovered {
-    fill: red;
-    opacity: 1;
+.pv-threadsome .person .instance .sender {
+    fill: hsl(0, 0%, 60%);
 }
 
-.pv-threadall .brush .selection {
-    fill: orange;
-    cursor: default;
+.pv-threadsome .person .instance .receiver {
+    fill: hsl(0, 0%, 85%);
+}
+
+.pv-threadsome .line {
+    stroke: hsl(0, 0%, 70%);
+}
+
+.pv-threadsome .lines.group {
+    stroke-width: 2px;
+}
+
+.pv-threadsome .line.exclusion {
+    stroke: hsl(0, 0%, 90%);
+}
+
+.pv-threadsome .line.group.exclusion {
+    stroke-width: 2px;
+}
+
+.pv-threadsome .time {
+    fill: none;
+    stroke: hsl(0, 0%, 50%);
+    stroke-opacity: 0.3;
+}
+
+.pv-threadsome .time.hovered {
+    stroke: #ffcc99;
+    stroke-opacity: 1;
+    stroke-width: 2;
+}
+
+.pv-threadsome .time .head {
+    stroke-width: 2px;
+}
+
+.pv-threadsome .message-background,
+.pv-threadsome .person-background {
+    fill: #ffe6cc;
+    stroke: none;
+}
+
+.pv-threadsome .background {
+    fill-opacity: 0;
 }

@@ -29,6 +29,7 @@ pv.vis.threadall = function() {
      */
     let threadData,
         featureData,
+        brushedIds,
         dataChanged = true; // True to redo all data-related computations
 
     /**
@@ -40,7 +41,7 @@ pv.vis.threadall = function() {
     /**
      * D3.
      */
-    const listeners = d3.dispatch('click'),
+    const listeners = d3.dispatch('click', 'brush'),
         featureScale = d3.scaleBand().paddingInner(0.2),
         yScale = d3.scaleLinear();
 
@@ -118,7 +119,7 @@ pv.vis.threadall = function() {
         // Axis and brush
         selection.each(function(d) {
             d.scale = d3.scaleLinear().domain(d3.extent(threadData, x => x[featureId(d)]));
-            d.brush = d3.brushX().on('brush', onBrushed).on('end', onBrushed);
+            d.brush = d3.brushX().on('brush', onBrushed).on('end', onBrushended);
             d3.select(this).append('g').attr('class', 'axis x-axis')
                 .attr('transform', 'translate(0, 5)');
             d3.select(this).append('g').attr('class', 'brush');
@@ -143,7 +144,7 @@ pv.vis.threadall = function() {
         }
 
         // x needs to satisfy all querying conditions (AND)
-        let brushedIds = [];
+        brushedIds = [];
         if (_.size(query)) {
             const isBrushed = x => d3.entries(query).every(q => x[q.key] >= q.value[0] && x[q.key] <= q.value[1]);
             brushedIds = threadData.filter(isBrushed).map(threadId);
@@ -151,6 +152,12 @@ pv.vis.threadall = function() {
 
         featureContainer.selectAll('.thread').classed('brushed', d2 => brushedIds.includes(d2.id));
         featureContainer.selectAll('.thread').filter(d2 => brushedIds.includes(d2.id)).raise();
+    }
+
+    function onBrushended(d) {
+        if (d3.event.selection) {
+            listeners.call('brush', this, brushedIds);
+        }
     }
 
     function updateFeatures(selection) {
@@ -171,7 +178,7 @@ pv.vis.threadall = function() {
             container.select('.axis').call(d3.axisBottom(d.scale).ticks(5));
 
             // Brush
-            d.brush.extent([[0, -maxBarHeight - 4], [featureScale.bandwidth(), 3]]);
+            d.brush.extent([[0, -maxBarHeight - 4], [featureScale.bandwidth() + 3, 3]]);
             container.select('.brush').call(d.brush);
 
             // Thread dots

@@ -1,39 +1,38 @@
 /**
  * A visualization of several email threads.
  * Data input:
- * - array of messages, each has:
- *  - messageId, subject, sender, time
- *  - array of recipients, each has email and type
+ * - array of threads, each has:
+ *  - threadId
+ *  - array of messages, each has:
+ *   - messageId, subject, sender, time
+ *   - array of recipients, each has email and type
  */
 pv.vis.threadsome = function() {
     /**
      * Visual configs.
      */
     const margin = { top: 45, right: 10, bottom: 5, left: 5 },
-        radius = 4,
         personHeight = 16,
         timeIndicatorGap = 40,
-        labelWidth = 90; // this value is also defined in css
+        labelWidth = 90; // This value is also defined in css
 
     let visWidth = 960, visHeight = 600, // Size of the visualization, including margins
         width, height, // Size of the main content, excluding margins
         visTitle = 'Thread Overview',
-        messageWidth,
-        sortGroupsMethod = 'time', // time/engagement
-        timeGrouping = false,
-        longConnector = false;
+        sortGroupsMethod = 'time'; // time/engagement
 
     /**
      * Accessors.
      */
-    let messageId = d => d.messageId,
+    let threadId = d => d.threadId,
+        messages = d => d.messages,
+        messageId = d => d.messageId,
         personId = d => d.id,
         subject = d => d.subject,
         sender = d => d.sender,
         time = d => d.time,
         recipients = d => d.recipients,
-        email = d => d.email,
-        type = d => d.type,
+        email = d => d.email
         lineId = d => d.id;
 
     /**
@@ -52,7 +51,7 @@ pv.vis.threadsome = function() {
         personContainer,
         personBackgroundContainer,
         lineContainer,
-        timeContainer,
+        threadContainer,
         axisContainer,
         selectionContainer;
 
@@ -61,10 +60,9 @@ pv.vis.threadsome = function() {
      */
     const listeners = d3.dispatch('click'),
         xAbsoluteScale = d3.scaleUtc(),
-        xRelativeScale = d3.scaleLinear(),
-        xAxis = d3.axisTop().scale(xAbsoluteScale);
-
-    const bcc = 'BCC';
+        xRelativeScale = d3.scaleBand().paddingInner(0.1),
+        xAxis = d3.axisTop().scale(xAbsoluteScale).ticks(5),
+        instanceSendRecvScale = d3.scaleLinear();
 
     /**
      * Main entry of the module.
@@ -73,20 +71,20 @@ pv.vis.threadsome = function() {
         selection.each(function(_data) {
             // Initialize
             if (!this.visInitialized) {
-                const container = d3.select(this).append('g').attr('class', 'pv-thread');
+                const container = d3.select(this).append('g').attr('class', 'pv-threadsome');
                 visContainer = container.append('g').attr('class', 'main-vis');
                 personBackgroundContainer = visContainer.append('g').attr('class', 'person-backgrounds');
-                timeContainer = visContainer.append('g').attr('class', 'times');
+                threadContainer = visContainer.append('g').attr('class', 'threads');
                 lineContainer = visContainer.append('g').attr('class', 'lines');
                 personContainer = visContainer.append('g').attr('class', 'persons');
                 axisContainer = visContainer.append('g').attr('class', 'axis');
                 selectionContainer = visContainer.append('g').attr('class', 'selection')
                     .attr('transform', 'translate(' + labelWidth + ',' + timeIndicatorGap + ')')
-                    .append('rect').attr('class', 'background')
-                    .on('mousemove', onSelectionMove)
-                    .on('mouseout', onSelectionOut);
+                    .append('rect').attr('class', 'background');
+                    // .on('mousemove', onSelectionMove)
+                    // .on('mouseout', onSelectionOut);
 
-                [personBackgroundContainer, lineContainer, personContainer, timeContainer].forEach(c => {
+                [personBackgroundContainer, lineContainer, personContainer, threadContainer].forEach(c => {
                     c.attr('transform', 'translate(0, ' + timeIndicatorGap + ')');
                 });
 
@@ -95,7 +93,12 @@ pv.vis.threadsome = function() {
                 this.visInitialized = true;
             }
 
-            data = _data.sort((a, b) => d3.ascending(time(a), time(b)) || d3.ascending(messageId(a), messageId(b)));
+            // Sort threads and messages by time.
+            data = _data.sort((a, b) => d3.ascending(time(a), time(b)) || d3.ascending(threadId(a), threadId(b)));
+            data.forEach(d => {
+                messages(d).sort((a, b) => d3.ascending(time(a), time(b)) || d3.ascending(messageId(a), messageId(b)));
+            });
+
             update();
         });
 
@@ -109,7 +112,6 @@ pv.vis.threadsome = function() {
         // Canvas update
         width = visWidth - margin.left - margin.right;
         height = visHeight - margin.top - margin.bottom;
-        messageWidth = (width - labelWidth) / (data.length - 1);
 
         visContainer.attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
         xAbsoluteScale.rangeRound([labelWidth, width]);
@@ -120,107 +122,89 @@ pv.vis.threadsome = function() {
          */
         // Updates that depend only on data change
         if (dataChanged) {
-            const persons = buildPersonData(data);
-            addMessageInstances(data);
+            personData = buildPersonData(data);
 
-            personData = groupPersons(persons);
-            sortGroups(personData);
+            // personData = groupPersons(persons);
+            // sortGroups(personData);
 
-            lineData = buildLineData(personData);
+            // lineData = buildLineData(personData);
 
-            xAbsoluteScale.domain(d3.extent(data, time));
-            xRelativeScale.domain([0, data.length - 1]);
+            xAbsoluteScale.domain(d3.extent(_.flatten(data.map(messages)), time));
+            xRelativeScale.domain(_.range(data.length));
+
+            const instances = _.flatten(personData.map(p => p.instances));
+            instanceSendRecvScale.domain([0, Math.max(d3.max(instances, d => d.senders), d3.max(instances, d => d.receivers))]);
         }
 
         // Updates that depend on both data and display change
-        updateSelectionHandle();
+        instanceSendRecvScale.rangeRound([0, xRelativeScale.bandwidth()]);
+
+        // updateSelectionHandle();
         layoutPersons(personData);
-        layoutMessages(data);
-        layoutLines(lineData, data);
+        layoutThreads(data);
+        // layoutLines(lineData, data);
 
         /**
          * Draw.
          */
-        axisContainer.call(xAxis);
+        // if (data.length) axisContainer.call(xAxis);
 
-        const personBackgrounds = personBackgroundContainer.selectAll('.person-background').data(personData, personId);
-        personBackgrounds.enter().append('rect').attr('class', 'person-background hidden')
-            .merge(personBackgrounds).call(updatePersonBackgrounds);
-        personBackgrounds.exit().transition().attr('opacity', 0).remove();
+        // const personBackgrounds = personBackgroundContainer.selectAll('.person-background').data(personData, personId);
+        // personBackgrounds.enter().append('rect').attr('class', 'person-background hidden')
+        //     .merge(personBackgrounds).call(updatePersonBackgrounds);
+        // personBackgrounds.exit().transition().attr('opacity', 0).remove();
 
         pv.enterUpdate(personData, personContainer, enterPersons, updatePersons, personId, 'person');
-        pv.enterUpdate(lineData, lineContainer, enterLines, updateLines, lineId, 'line');
-        pv.enterUpdate(data, timeContainer, enterTimes, updateTimes, messageId, 'time');
+        // pv.enterUpdate(lineData, lineContainer, enterLines, updateLines, lineId, 'line');
+        pv.enterUpdate(data, threadContainer, enterThreads, updateThreads, threadId, 'thread');
 
         // Keep the elements sync. with the data to make the hovering by index work.
-        personBackgrounds.order();
+        // personBackgrounds.order();
     }
 
-    function buildPersonData(messages) {
+    function buildPersonData(threads) {
         // Persons include both senders and recipients.
-        // Senders are added first, sorted by time.
-        // Then recipients who don't send are added, sort by time as well.
-        // Messages are expected to be already sorted by time.
-        const persons = [];
+        // Threads and messages are expected to be already sorted by time.
         personLookup = {};
 
-        function addPerson(s) {
-            if (!personLookup[s]) {
-                persons.push({
-                    id: s,
-                    label: s.substr(0, s.indexOf('@')),
-                    title: s,
-                    email: s,
-                    instances: []
-                });
-                personLookup[s] = _.last(persons);
-            }
+        // Add a person
+        function addPerson(email) {
+            let p = personLookup[email];
+            if (p) return p;
+
+            return personLookup[email] = {
+                id: email,
+                label: email.substr(0, email.indexOf('@')),
+                title: email,
+                email: email,
+                instances: Array(threads.length) // Instance is an occurrence of a person in a thread
+            };
         }
 
-        messages.map(sender).forEach(addPerson);
+        threads.forEach((t, i) => {
+            messages(t).forEach(m => {
+                // Add a person, then increase counts for the number of times the person sends and receives messages.
+                let p = addPerson(sender(m));
+                if (!p.instances[i]) p.instances[i] = { threadIdx: i, senders: 0, receivers: 0 };
+                p.instances[i].senders++;
 
-        persons.forEach(p => {
-            p.isSender = true;
+                // recipients can include the sender
+                // recipients can be repeated, so get unique emails
+                _.uniq(recipients(m).filter(r => email(r) !== sender(m)).map(email)).forEach(r => {
+                    p = addPerson(r);
+                    if (!p.instances[i]) p.instances[i] = { threadIdx: i, senders: 0, receivers: 0 };
+                    p.instances[i].receivers++;
+                });
+            });
         });
 
-        messages.map(recipients).forEach(r => {
-            r.map(email).forEach(addPerson);
+        // Filter out empty instances
+        const persons = _.values(personLookup);
+        persons.forEach(p => {
+            p.instances = p.instances.filter(p => p);
         });
 
         return persons;
-    }
-
-    function addMessageInstances(messages) {
-        messages.forEach((m, i) => {
-            const reLookup = {};
-
-            // Sender can be in the recipients
-            personLookup[sender(m)].instances.push(createNewMessageInstance(i, true));
-            reLookup[sender(m)] = 1;
-
-            recipients(m).forEach(r => {
-                // There can be duplicate recipients in a message with different types, or even simply identical duplicates?
-                const oldInstance = reLookup[email(r)];
-                if (!oldInstance) {
-                    const instance = createNewMessageInstance(i, false, type(r));
-                    personLookup[email(r)].instances.push(instance);
-                    reLookup[email(r)] = instance;
-                } else if (!oldInstance.isSender) { // Don't update if there was a sender
-                    // If the instance exists but the new one is 'bcc', update it
-                    if (type(r) === bcc) {
-                        oldInstance.type = bcc;
-                    }
-                }
-            });
-        });
-    }
-
-    function createNewMessageInstance(idx, isSender, type) {
-        return {
-            messageIdx: idx, // Index of the message in the array of messages
-            isSender: isSender,
-            type: type
-        };
     }
 
     function groupPersons(persons) {
@@ -381,6 +365,33 @@ pv.vis.threadsome = function() {
             `);
     }
 
+    function updateSelectionHandle() {
+        selectionContainer
+            .attr('x', -instanceWidth / 2)
+            .attr('width', width - labelWidth + instanceWidth)
+            .attr('height', personHeight * personData.length);
+    }
+
+    function onSelectionMove() {
+        const x = d3.mouse(this)[0],
+            y = d3.mouse(this)[1];
+
+        // Highlight message
+        const messageIdx = Math.floor((x + instanceWidth / 2) / instanceWidth);
+        threadContainer.selectAll('.message-background').classed('hidden', (d, i) => messageIdx !== i);
+        threadContainer.selectAll('.time').classed('hovered', (d, i) => messageIdx === i);
+
+        // Highlight person
+        const personIdx = Math.floor(y / personHeight);
+        personBackgroundContainer.selectAll('.person-background').classed('hidden', (d, i) => personIdx !== i);
+    }
+
+    function onSelectionOut() {
+        threadContainer.selectAll('.message-background').classed('hidden', true);
+        threadContainer.selectAll('.time').classed('hovered', false);
+        personBackgroundContainer.selectAll('.person-background').classed('hidden', true);
+    }
+
     function enterPersons(selection) {
         const container = selection
             .attr('transform', d => 'translate(' + d.x + ',' + d.y + ')')
@@ -388,7 +399,9 @@ pv.vis.threadsome = function() {
 
         container.append('g').attr('class', 'instances');
 
-        const fo = container.append('foreignObject').attr('width', '100%').attr('height', personHeight + 'px');
+        const fo = container.append('foreignObject')
+            .attr('width', labelWidth + 'px')
+            .attr('height', personHeight + 'px');
         fo.append('xhtml:div').attr('class', 'label');
     }
 
@@ -409,7 +422,7 @@ pv.vis.threadsome = function() {
 
             // Message instances
             layoutInstances(d.instances);
-            const instances = container.select('.instances').selectAll('.instance').data(d.instances, d => d.messageIdx);
+            const instances = container.select('.instances').selectAll('.instance').data(d.instances, d => d.threadIdx);
             instances.enter().append('g').attr('class', 'instance').call(enterInstances)
                 .merge(instances).call(updateInstances);
             instances.exit().transition().attr('opacity', 0).remove();
@@ -421,7 +434,7 @@ pv.vis.threadsome = function() {
             d3.select(this)
                 .attr('transform', 'translate(' + d.x + ',' + d.y + ')')
                 .attr('y', -1)
-                .attr('width', width + messageWidth / 2)
+                .attr('width', width + instanceWidth / 2)
                 .attr('height', personHeight);
         });
     }
@@ -431,8 +444,9 @@ pv.vis.threadsome = function() {
             .attr('transform', d => 'translate(' + d.x + ',' + d.y + ')')
             .attr('opacity', 0);
 
-        container.append('circle')
-            .attr('r', radius);
+        container.append('rect').attr('class', 'sender');
+        container.append('rect').attr('class', 'receiver');
+        container.append('title').text(d => 'send: ' + d.senders + '\nreceive: ' + d.receivers);
     }
 
     function updateInstances(selection) {
@@ -443,52 +457,70 @@ pv.vis.threadsome = function() {
                 .attr('transform', 'translate(' + d.x + ',' + d.y + ')')
                 .attr('opacity', 1);
 
-            container.classed('sender', d.isSender);
-            container.classed('bcc', type(d) === bcc);
+            container.select('.sender')
+                .attr('width', instanceSendRecvScale(d.senders))
+                .attr('height', personHeight / 2 - 2);
+            container.select('.receiver')
+                .attr('y', personHeight / 2 - 2)
+                .attr('width', instanceSendRecvScale(d.receivers))
+                .attr('height', personHeight / 2 - 2);
         });
     }
 
-    function enterTimes(selection) {
+    function enterThreads(selection) {
         const container = selection
+            .attr('transform', d => 'translate(' + d.x + ',' + d.y + ')')
             .attr('opacity', 0);
 
-        container.append('rect').attr('class', 'message-background hidden');
+        container.append('circle')
+            .attr('r', 6)
+            .style('fill', 'steelblue')
+            .style('cursor', 'pointer')
+            .attr('cx', xRelativeScale.bandwidth() / 2)
+            .attr('cy', -10);
 
-        container.append('path').attr('class', 'head');
-        container.append('path').attr('class', 'main');
-        container.append('path').attr('class', 'connector');
-        container.append('path').attr('class', 'tail');
+        container.on('click', function(d) {
+            listeners.call('click', this, d);
+        });
+
+
+        // container.append('rect').attr('class', 'message-background hidden');
+
+        // container.append('path').attr('class', 'head');
+        // container.append('path').attr('class', 'main');
+        // container.append('path').attr('class', 'connector');
+        // container.append('path').attr('class', 'tail');
     }
 
-    function updateTimes(selection) {
+    function updateThreads(selection) {
         selection.each(function(d, i) {
             const container = d3.select(this);
 
             container.transition()
                 .attr('opacity', 1);
 
-            container.select('.message-background')
-                .attr('x', d.x - personHeight / 2)
-                .attr('y', 0)
-                .attr('width', personHeight)
-                .attr('height', personHeight * personData.length);
+            // container.select('.message-background')
+            //     .attr('x', d.x - personHeight / 2)
+            //     .attr('y', 0)
+            //     .attr('width', personHeight)
+            //     .attr('height', personHeight * personData.length);
 
             // Find the instance closet to the timeline
-            const firstInstanceY = personData.find(p => p.instances.find(m => m.messageIdx === i)).y;
-            const headHeight = 6;
+            // const firstInstanceY = personData.find(p => p.instances.find(m => m.messageIdx === i)).y;
+            // const headHeight = 6;
 
-            container.select('.head')
-                .attr('d', getLine([[d.tx, d.ty], [d.tx, d.ty + headHeight]]));
+            // container.select('.head')
+            //     .attr('d', getLine([[d.tx, d.ty], [d.tx, d.ty + headHeight]]));
 
-            container.select('.main')
-                .attr('d', getCurve([[d.tx, d.ty + headHeight], timeGrouping ? [d.cx, d.y - 15] : [d.x, d.y - headHeight]]));
+            // container.select('.main')
+            //     .attr('d', getCurve([[d.tx, d.ty + headHeight], timeGrouping ? [d.cx, d.y - 15] : [d.x, d.y - headHeight]]));
 
-            container.select('.connector')
-                .classed('hidden', !timeGrouping)
-                .attr('d', getCurve([[d.cx, d.y - 15], [d.x, d.y - headHeight]]));
+            // container.select('.connector')
+            //     .classed('hidden', !timeGrouping)
+            //     .attr('d', getCurve([[d.cx, d.y - 15], [d.x, d.y - headHeight]]));
 
-            container.select('.tail')
-                .attr('d', getLine([[d.x, d.y - headHeight], [d.x, longConnector ? firstInstanceY + headHeight : d.y]]));
+            // container.select('.tail')
+            //     .attr('d', getLine([[d.x, d.y - headHeight], [d.x, longConnector ? firstInstanceY + headHeight : d.y]]));
         });
     }
 
@@ -533,45 +565,17 @@ pv.vis.threadsome = function() {
         });
     }
 
-    function layoutMessages(messages) {
-        const minGap = 1;
-        let currentGroup = [];
-
-        function assignGroupMean(g) {
-            const cx = d3.mean(g, m => m.x);
-            g.forEach(m => {
-                m.cx = cx;
-            });
-        }
-
-        messages.forEach((m, i) => {
-            m.x = xRelativeScale(i);
-            m.y = 4;
-            m.tx = xAbsoluteScale(time(m)) + 0.5;
-            m.ty = 1 - timeIndicatorGap;
-
-            // If the distance between this timestamp and the previous timestamp is less than a given threshold,
-            // add to the current group.
-            if (i === 0) {
-                currentGroup.push(m);
-            } else {
-                if (m.tx - messages[i - 1].tx < minGap) {
-                    currentGroup.push(m);
-                } else {
-                    assignGroupMean(currentGroup);
-                    currentGroup = [m];
-                }
-            }
+    function layoutThreads(threads) {
+        threads.forEach((t, i) => {
+            t.x = xRelativeScale(i);
+            t.y = 0;
         });
-
-        // Last group
-        assignGroupMean(currentGroup);
     }
 
     function layoutInstances(instances) {
         instances.forEach(i => {
-            i.x = data[i.messageIdx].x;
-            i.y = (personHeight - radius) / 2 + 1;
+            i.x = data[i.threadIdx].x;
+            i.y = 1;
         });
     }
 
