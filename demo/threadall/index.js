@@ -51,8 +51,8 @@ document.addEventListener('DOMContentLoaded', function() {
             t.time = t.messages[0].time;
         });
 
-        // overviewData = featureData.threads.slice(0, 3);
-        // detailData = featureData.threads[0].messages;
+        overviewData = featureData.threads.slice(0, 3);
+        detailData = featureData.threads[0].messages;
 
         // Build the vises
         update();

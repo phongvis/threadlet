@@ -18,8 +18,7 @@ pv.vis.threadsome = function() {
 
     let visWidth = 960, visHeight = 600, // Size of the visualization, including margins
         width, height, // Size of the main content, excluding margins
-        visTitle = 'Thread Overview',
-        sortGroupsMethod = 'time'; // time/engagement
+        visTitle = 'Thread Overview';
 
     /**
      * Accessors.
@@ -32,8 +31,7 @@ pv.vis.threadsome = function() {
         sender = d => d.sender,
         time = d => d.time,
         recipients = d => d.recipients,
-        email = d => d.email
-        lineId = d => d.id;
+        email = d => d.email;
 
     /**
      * Data binding to DOM elements.
@@ -41,7 +39,6 @@ pv.vis.threadsome = function() {
     let data,
         personLookup,
         personData,
-        lineData,
         dataChanged = true; // True to redo all data-related computations
 
     /**
@@ -50,7 +47,6 @@ pv.vis.threadsome = function() {
     let visContainer, // Containing the entire visualization
         personContainer,
         personBackgroundContainer,
-        lineContainer,
         threadContainer,
         axisContainer,
         selectionContainer;
@@ -75,16 +71,15 @@ pv.vis.threadsome = function() {
                 visContainer = container.append('g').attr('class', 'main-vis');
                 personBackgroundContainer = visContainer.append('g').attr('class', 'person-backgrounds');
                 threadContainer = visContainer.append('g').attr('class', 'threads');
-                lineContainer = visContainer.append('g').attr('class', 'lines');
                 personContainer = visContainer.append('g').attr('class', 'persons');
                 axisContainer = visContainer.append('g').attr('class', 'axis');
                 selectionContainer = visContainer.append('g').attr('class', 'selection')
                     .attr('transform', 'translate(' + labelWidth + ',' + timeIndicatorGap + ')')
-                    .append('rect').attr('class', 'background');
-                    // .on('mousemove', onSelectionMove)
-                    // .on('mouseout', onSelectionOut);
+                    .append('rect').attr('class', 'background')
+                        .on('mousemove', onSelectionMove)
+                        .on('mouseout', onSelectionOut);
 
-                [personBackgroundContainer, lineContainer, personContainer, threadContainer].forEach(c => {
+                [personBackgroundContainer, personContainer, threadContainer].forEach(c => {
                     c.attr('transform', 'translate(0, ' + timeIndicatorGap + ')');
                 });
 
@@ -122,10 +117,8 @@ pv.vis.threadsome = function() {
          */
         // Updates that depend only on data change
         if (dataChanged) {
-            personData = buildPersonData(data);
-
-            // personData = groupPersons(persons);
-            // sortGroups(personData);
+            const persons = buildPersonData(data);
+            personData = groupPersons(persons);
 
             // lineData = buildLineData(personData);
 
@@ -139,27 +132,22 @@ pv.vis.threadsome = function() {
         // Updates that depend on both data and display change
         instanceSendRecvScale.rangeRound([0, xRelativeScale.bandwidth()]);
 
-        // updateSelectionHandle();
+        updateSelectionHandle();
         layoutPersons(personData);
         layoutThreads(data);
-        // layoutLines(lineData, data);
 
         /**
          * Draw.
          */
         // if (data.length) axisContainer.call(xAxis);
 
-        // const personBackgrounds = personBackgroundContainer.selectAll('.person-background').data(personData, personId);
-        // personBackgrounds.enter().append('rect').attr('class', 'person-background hidden')
-        //     .merge(personBackgrounds).call(updatePersonBackgrounds);
-        // personBackgrounds.exit().transition().attr('opacity', 0).remove();
+        const personBackgrounds = personBackgroundContainer.selectAll('.person-background').data(personData, personId);
+        personBackgrounds.enter().append('rect').attr('class', 'person-background hidden')
+            .merge(personBackgrounds).call(updatePersonBackgrounds);
+        personBackgrounds.exit().transition().attr('opacity', 0).remove();
 
         pv.enterUpdate(personData, personContainer, enterPersons, updatePersons, personId, 'person');
-        // pv.enterUpdate(lineData, lineContainer, enterLines, updateLines, lineId, 'line');
         pv.enterUpdate(data, threadContainer, enterThreads, updateThreads, threadId, 'thread');
-
-        // Keep the elements sync. with the data to make the hovering by index work.
-        // personBackgrounds.order();
     }
 
     function buildPersonData(threads) {
@@ -220,7 +208,7 @@ pv.vis.threadsome = function() {
                 const id = personId(identicalPersons[0]),
                     g = {
                         id: id,
-                        label: 'Group (' + (identicalPersons.length + 1) + ')',
+                        label: 'Group (' + identicalPersons.length + ')',
                         title: identicalPersons.map(d => d.title).join('\n'),
                         isGroup: true,
                         emails: identicalPersons.map(p => p.email),
@@ -242,10 +230,10 @@ pv.vis.threadsome = function() {
 
         persons.filter(x => !x.processed && x.instances.length === p.instances.length).forEach(x => {
             let same = true;
-            p.instances.forEach((m, i) => {
-                if (m.messageIdx !== x.instances[i].messageIdx ||
-                    m.isSender !== x.instances[i].isSender ||
-                    m.type !== x.instances[i].type) {
+            p.instances.forEach((t, i) => {
+                if (t.threadIdx !== x.instances[i].threadIdx ||
+                    t.senders !== x.instances[i].senders ||
+                    t.receivers !== x.instances[i].receivers) {
                     same = false;
                     return;
                 }
@@ -258,46 +246,6 @@ pv.vis.threadsome = function() {
         });
 
         return results;
-    }
-
-    function sortGroups(groups) {
-        const f = sortGroupsMethod === 'time' ? compareGroupsByTime : compareGroupsByEngagement;
-        groups.sort((a, b) => f(a, b));
-    }
-
-    function compareGroupsById(a, b) {
-        return d3.ascending(personId(a), personId(b));
-    }
-
-    function compareGroupsByTime(a, b) {
-        // Earlier message comes first. If a pair of messages is the same, compare the next one.
-        const aTimes = a.instances.map(m => time(data[m.messageIdx])),
-            bTimes = b.instances.map(m => time(data[m.messageIdx]));
-
-        for (let i = 0; i < Math.max(aTimes.length, bTimes.length); i++) {
-            if (!aTimes[i]) return -1; // a is shorter
-            if (!bTimes[i]) return 1; // b is shorter
-
-            const c = d3.ascending(aTimes[i], bTimes[i]);
-            if (c) return c;
-
-            // Same time
-            if (a.instances[i].isSender) return -1; // sender first
-            if (b.instances[i].isSender) return 1; // sender first
-            if (a.instances[i].type === bcc) return 1; // bcc last
-            if (b.instances[i].type === bcc) return -1; // bcc last
-        }
-
-        return compareGroupsById(a, b);
-    }
-
-    function compareGroupsByEngagement(a, b) {
-        // Number of sent messages, then number of received messages
-        const aSentCount = a.instances.filter(d => d.isSender).length,
-            bSentCount = b.instances.filter(d => d.isSender).length,
-            aTotal = a.instances.length,
-            bTotal = b.instances.length;
-        return bSentCount - aSentCount || bTotal - aTotal || compareGroupsById(a, b);
     }
 
     function buildLineData(persons) {
@@ -367,8 +315,7 @@ pv.vis.threadsome = function() {
 
     function updateSelectionHandle() {
         selectionContainer
-            .attr('x', -instanceWidth / 2)
-            .attr('width', width - labelWidth + instanceWidth)
+            .attr('width', width - labelWidth)
             .attr('height', personHeight * personData.length);
     }
 
@@ -376,10 +323,10 @@ pv.vis.threadsome = function() {
         const x = d3.mouse(this)[0],
             y = d3.mouse(this)[1];
 
-        // Highlight message
-        const messageIdx = Math.floor((x + instanceWidth / 2) / instanceWidth);
-        threadContainer.selectAll('.message-background').classed('hidden', (d, i) => messageIdx !== i);
-        threadContainer.selectAll('.time').classed('hovered', (d, i) => messageIdx === i);
+        // Highlight thread
+        const threadIdx = Math.floor(x / xRelativeScale.bandwidth() / (1 + xRelativeScale.paddingInner()));
+        threadContainer.selectAll('.thread-background').classed('hidden', (d, i) => threadIdx !== i);
+        threadContainer.selectAll('.time').classed('hovered', (d, i) => threadIdx === i);
 
         // Highlight person
         const personIdx = Math.floor(y / personHeight);
@@ -387,7 +334,7 @@ pv.vis.threadsome = function() {
     }
 
     function onSelectionOut() {
-        threadContainer.selectAll('.message-background').classed('hidden', true);
+        threadContainer.selectAll('.thread-background').classed('hidden', true);
         threadContainer.selectAll('.time').classed('hovered', false);
         personBackgroundContainer.selectAll('.person-background').classed('hidden', true);
     }
@@ -434,7 +381,7 @@ pv.vis.threadsome = function() {
             d3.select(this)
                 .attr('transform', 'translate(' + d.x + ',' + d.y + ')')
                 .attr('y', -1)
-                .attr('width', width + instanceWidth / 2)
+                .attr('width', width - 1)
                 .attr('height', personHeight);
         });
     }
@@ -484,7 +431,7 @@ pv.vis.threadsome = function() {
         });
 
 
-        // container.append('rect').attr('class', 'message-background hidden');
+        container.append('rect').attr('class', 'thread-background hidden');
 
         // container.append('path').attr('class', 'head');
         // container.append('path').attr('class', 'main');
@@ -499,11 +446,9 @@ pv.vis.threadsome = function() {
             container.transition()
                 .attr('opacity', 1);
 
-            // container.select('.message-background')
-            //     .attr('x', d.x - personHeight / 2)
-            //     .attr('y', 0)
-            //     .attr('width', personHeight)
-            //     .attr('height', personHeight * personData.length);
+            container.select('.thread-background')
+                .attr('width', xRelativeScale.bandwidth())
+                .attr('height', personHeight * personData.length - 1);
 
             // Find the instance closet to the timeline
             // const firstInstanceY = personData.find(p => p.instances.find(m => m.messageIdx === i)).y;
@@ -530,32 +475,6 @@ pv.vis.threadsome = function() {
 
     function getCurve(points) {
         return d3.linkVertical()({ source: points[0], target: points[1] });
-    }
-
-    function enterLines(selection) {
-        const container = selection
-            .attr('opacity', 0);
-
-        container.append('line');
-    }
-
-    function updateLines(selection) {
-        selection.each(function(d) {
-            const container = d3.select(this);
-
-            container.transition()
-                .attr('opacity', 1);
-
-            container.classed('exclusion', d.exclusion);
-            container.classed('group', d.isGroup);
-
-            container.select('line')
-                .transition()
-                .attr('x1', d.x1)
-                .attr('y1', d.y)
-                .attr('x2', d.x2)
-                .attr('y2', d.y);
-        });
     }
 
     function layoutPersons(persons) {

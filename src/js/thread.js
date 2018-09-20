@@ -20,7 +20,7 @@ pv.vis.thread = function() {
         visTitle = 'Thread Messages',
         messageWidth,
         sortGroupsMethod = 'time', // time/engagement
-        timeGrouping = true,
+        timeGrouping = false,
         longConnector = true;
 
     /**
@@ -83,8 +83,8 @@ pv.vis.thread = function() {
                 selectionContainer = visContainer.append('g').attr('class', 'selection')
                     .attr('transform', 'translate(' + labelWidth + ',' + timeIndicatorGap + ')')
                     .append('rect').attr('class', 'background')
-                    .on('mousemove', onSelectionMove)
-                    .on('mouseout', onSelectionOut);
+                        .on('mousemove', onSelectionMove)
+                        .on('mouseout', onSelectionOut);
 
                 [personBackgroundContainer, lineContainer, personContainer, timeContainer].forEach(c => {
                     c.attr('transform', 'translate(0, ' + timeIndicatorGap + ')');
@@ -236,7 +236,7 @@ pv.vis.thread = function() {
                 const id = personId(identicalPersons[0]),
                     g = {
                         id: id,
-                        label: 'Group (' + (identicalPersons.length + 1) + ')',
+                        label: 'Group (' + identicalPersons.length + ')',
                         title: identicalPersons.map(d => d.title).join('\n'),
                         isGroup: true,
                         emails: identicalPersons.map(p => p.email),
@@ -537,7 +537,7 @@ pv.vis.thread = function() {
                 .attr('x', d.x - personHeight / 2)
                 .attr('y', 0)
                 .attr('width', personHeight)
-                .attr('height', personHeight * personData.length);
+                .attr('height', personHeight * personData.length - 1);
 
             // Find the instance closet to the timeline
             const firstInstanceY = personData.find(p => p.instances.find(m => m.messageIdx === i)).y;

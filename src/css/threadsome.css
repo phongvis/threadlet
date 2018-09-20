@@ -30,22 +30,6 @@
     fill: hsl(0, 0%, 85%);
 }
 
-.pv-threadsome .line {
-    stroke: hsl(0, 0%, 70%);
-}
-
-.pv-threadsome .lines.group {
-    stroke-width: 2px;
-}
-
-.pv-threadsome .line.exclusion {
-    stroke: hsl(0, 0%, 90%);
-}
-
-.pv-threadsome .line.group.exclusion {
-    stroke-width: 2px;
-}
-
 .pv-threadsome .time {
     fill: none;
     stroke: hsl(0, 0%, 50%);
@@ -62,7 +46,7 @@
     stroke-width: 2px;
 }
 
-.pv-threadsome .message-background,
+.pv-threadsome .thread-background,
 .pv-threadsome .person-background {
     fill: #ffe6cc;
     stroke: none;
