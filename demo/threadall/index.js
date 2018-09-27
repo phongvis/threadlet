@@ -49,6 +49,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Starting time of the thread
             t.time = t.messages[0].time;
+
+            // Tooltip
+            t.tooltip = 'Started: ' + d3.timeFormat('%c')(t.time);
+            featureData.features.forEach(feature => {
+                t.tooltip += '\n' + feature.label + ': ' + t[feature.name];
+            });
         });
 
         overviewData = featureData.threads.slice(0, 3);

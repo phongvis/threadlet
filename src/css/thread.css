@@ -14,10 +14,6 @@
     font-weight: bold;
 }
 
-.pv-thread .person.hovered .label {
-    color: black;
-}
-
 .pv-thread .person.group {
     stroke-width: 2px;
 }
@@ -64,7 +60,7 @@
 }
 
 .pv-thread .time.hovered {
-    stroke: #ffcc99;
+    stroke: hsl(31, 100%, 85%);
     stroke-opacity: 1;
     stroke-width: 2;
 }
@@ -75,7 +71,7 @@
 
 .pv-thread .message-background,
 .pv-thread .person-background {
-    fill: #ffe6cc;
+    fill: hsl(31, 100%, 93%);
     stroke: none;
 }
 

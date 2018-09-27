@@ -14,10 +14,6 @@
     font-weight: bold;
 }
 
-.pv-threadsome .person.hovered .label {
-    color: black;
-}
-
 .pv-threadsome .person.group {
     stroke-width: 2px;
 }
@@ -30,28 +26,38 @@
     fill: hsl(0, 0%, 85%);
 }
 
-.pv-threadsome .time {
+.pv-threadsome .thread .time {
     fill: none;
     stroke: hsl(0, 0%, 50%);
     stroke-opacity: 0.3;
 }
 
-.pv-threadsome .time.hovered {
+.pv-threadsome .thread.hovered {
     stroke: #ffcc99;
     stroke-opacity: 1;
     stroke-width: 2;
 }
 
-.pv-threadsome .time .head {
+.pv-threadsome .thread .time .head {
     stroke-width: 2px;
 }
 
-.pv-threadsome .thread-background,
 .pv-threadsome .person-background {
-    fill: #ffe6cc;
-    stroke: none;
+    fill: hsl(31, 100%, 93%);
 }
 
 .pv-threadsome .background {
     fill-opacity: 0;
+}
+
+.pv-threadsome .thread-background {
+    fill: none;
+}
+
+.pv-threadsome .thread-background.odd {
+    fill: hsl(0, 0%, 96%);
+}
+
+.pv-threadsome .thread-background.active {
+    fill: hsl(31, 100%, 93%);
 }

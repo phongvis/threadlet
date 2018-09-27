@@ -1,5 +1,10 @@
+.pv-threadall .brush .selection {
+    fill: orange;
+    stroke: orange;
+    cursor: default;
+}
+
 .pv-threadall .feature .label {
-    font-weight: bold;
     fill: black;
     text-anchor: middle;
     dominant-baseline: text-before-edge;
@@ -19,7 +24,10 @@
     opacity: 1;
 }
 
-.pv-threadall .brush .selection {
-    fill: orange;
-    cursor: default;
+.pv-threadall .feature .background {
+    fill: none;
+}
+
+.pv-threadall .feature .background.odd {
+    fill: hsl(0, 0%, 96%);
 }

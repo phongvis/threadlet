@@ -9,12 +9,13 @@ pv.vis.threadall = function() {
     /**
      * Visual configs.
      */
-    const margin = { top: 45, right: 10, bottom: 5, left: 10 };
+    const margin = { top: 25, right: 10, bottom: 40, left: 10 };
 
     let visWidth = 960, visHeight = 600, // Size of the visualization, including margins
         width, height, // Size of the main content, excluding margins
         visTitle = 'Thread Features',
-        maxBarHeight;
+        maxBarWidth,
+        brushing = false;
 
     /**
      * Accessors.
@@ -22,7 +23,8 @@ pv.vis.threadall = function() {
     let threadId = d => d.threadId,
         featureId = d => d.name,
         featureLabel = d => d.label,
-        time = d => d.time;
+        time = d => d.time
+        tooltip = d => d.tooltip;
 
     /**
      * Data binding to DOM elements.
@@ -36,17 +38,16 @@ pv.vis.threadall = function() {
      * DOM.
      */
     let visContainer, // Containing the entire visualization
+        axisContainer,
         featureContainer;
 
     /**
      * D3.
      */
     const listeners = d3.dispatch('click', 'brush'),
-        featureScale = d3.scaleBand().paddingInner(0.2),
-        yScale = d3.scaleLinear();
-
-    const jitterLookup = {}; // Random noise adding to threads to avoid overplotting
-    let query = {};
+        featureScale = d3.scaleBand().paddingInner(0.15),
+        xScale = d3.scaleUtc(),
+        xAxis = d3.axisBottom(xScale);
 
     /**
      * Main entry of the module.
@@ -57,6 +58,7 @@ pv.vis.threadall = function() {
             if (!this.visInitialized) {
                 const container = d3.select(this).append('g').attr('class', 'pv-threadall');
                 visContainer = container.append('g').attr('class', 'main-vis');
+                axisContainer = visContainer.append('g').attr('class', 'axis x-axis');
                 featureContainer = visContainer.append('g').attr('class', 'features');
 
                 featureData = _data.features;
@@ -80,11 +82,12 @@ pv.vis.threadall = function() {
         // Canvas update
         width = visWidth - margin.left - margin.right;
         height = visHeight - margin.top - margin.bottom;
-        maxBarHeight = height - 20;
+        maxBarWidth = width;
 
         visContainer.attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
-        featureScale.range([0, width]);
-        yScale.range([0, -maxBarHeight]);
+        axisContainer.attr('transform', 'translate(0,' + height + ')');
+        featureScale.range([0, height - 5]);
+        xScale.range([0, maxBarWidth]);
 
         /**
          * Computation.
@@ -92,14 +95,14 @@ pv.vis.threadall = function() {
         // Updates that depend only on data change
         if (dataChanged) {
             featureScale.domain(d3.range(featureData.length));
-            yScale.domain(d3.extent(threadData, time));
-
-            threadData.forEach(t => {
-                featureData.forEach(f => {
-                    jitterLookup[threadId(t) + '-' + featureId(f)] = Math.random();
-                });
-            });
+            xScale.domain(d3.extent(threadData, time));
         }
+
+        // Axis
+        axisContainer.call(xAxis)
+            .selectAll('text')
+            .style('text-anchor', 'end')
+            .attr('transform', 'rotate(-30)');
 
         // Updates that depend on both data and display change
         layoutFeatures();
@@ -112,73 +115,80 @@ pv.vis.threadall = function() {
             .attr('transform', d => 'translate(' + d.x + ',' + d.y + ')')
             .attr('opacity', 1);
 
+        // Alternating background
+        container.append('rect').attr('class', 'background');
+
         // Label
         container.append('text').attr('class', 'label')
             .text(featureLabel);
 
         // Axis and brush
-        selection.each(function(d) {
+        selection.each(function(d, i) {
             d.scale = d3.scaleLinear().domain(d3.extent(threadData, x => x[featureId(d)]));
-            d.brush = d3.brushX().on('brush', onBrushed).on('end', onBrushended);
-            d3.select(this).append('g').attr('class', 'axis x-axis')
-                .attr('transform', 'translate(0, 5)');
+            d.brush = d3.brush().on('start', onBrushstarted).on('brush', onBrushed).on('end', onBrushended);
             d3.select(this).append('g').attr('class', 'brush');
         });
     }
 
+    function onBrushstarted(d) {
+        brushing = true;
+
+        // // Only keep the active brush, so kill others
+        // featureContainer.selectAll('.brush').filter(d2 => d2 !== d).each(function(d2) {
+        //     d2.brush.move(d3.select(this), null);
+        // });
+    }
+
     function onBrushed(d) {
-        const feature = featureId(d);
-        if (d3.event.selection) {
-            // If holding SHIFT, add the feature to the query. Otherwise, set the feature to the only one.
-            if (!d3.event.sourceEvent.shiftKey) {
-                query = {};
-
-                // Also clear other feature brushes.
-                featureContainer.selectAll('.brush').filter(d2 => d2 !== d).each(function(d2) {
-                    d2.brush.move(d3.select(this), null);
-                });
-            }
-            query[feature] = d3.event.selection.map(d.scale.invert);
-        } else {
-            delete query[feature];
-        }
-
-        // x needs to satisfy all querying conditions (AND)
         brushedIds = [];
-        if (_.size(query)) {
-            const isBrushed = x => d3.entries(query).every(q => x[q.key] >= q.value[0] && x[q.key] <= q.value[1]);
-            brushedIds = threadData.filter(isBrushed).map(threadId);
+
+        const s = d3.event.selection;
+        if (s) {
+            isBrushed = d => d.x >= s[0][0] && d.x <= s[1][0] && d.y >= s[0][1] && d.y <= s[1][1];
+
+            // Find the brushed elements using the brushing feature, then brush the same ids from other features
+            d3.select(this.parentNode).selectAll('.thread').each(function(d) {
+                if (isBrushed(d)) brushedIds.push(d.id);
+            });
         }
 
         featureContainer.selectAll('.thread').classed('brushed', d2 => brushedIds.includes(d2.id));
         featureContainer.selectAll('.thread').filter(d2 => brushedIds.includes(d2.id)).raise();
     }
 
-    function onBrushended(d) {
-        if (d3.event.selection) {
-            listeners.call('brush', this, brushedIds);
-        }
+    function onBrushended() {
+        onBrushed.call(this);
+        brushing = false;
+
+        listeners.call('brush', this, brushedIds);
     }
 
     function updateFeatures(selection) {
-        selection.each(function(d) {
+        selection.each(function(d, i) {
             const container = d3.select(this);
 
             container.transition()
                 .attr('transform', 'translate(' + d.x + ',' + d.y + ')')
                 .attr('opacity', 1);
 
+            // Background
+            container.select('.background')
+                .classed('odd', i % 2)
+                .attr('x', -margin.left)
+                .attr('y', -5)
+                .attr('width', width + margin.left + margin.right)
+                .attr('height', featureScale.bandwidth() + 10);
+
             // Label
             container.select('text')
-                .attr('x', featureScale.bandwidth() / 2)
-                .attr('y', -maxBarHeight - 23);
+                .attr('x', width / 2)
+                .attr('y', 0);
 
-            // Axis
-            d.scale.rangeRound([0, featureScale.bandwidth()]).nice();
-            container.select('.axis').call(d3.axisBottom(d.scale).ticks(5));
+            // Scale
+            d.scale.rangeRound([featureScale.bandwidth(), 20]).nice();
 
             // Brush
-            d.brush.extent([[0, -maxBarHeight - 4], [featureScale.bandwidth() + 3, 3]]);
+            d.brush.extent([[-5, 0], [width + 5, featureScale.bandwidth() + 10]]);
             container.select('.brush').call(d.brush);
 
             // Thread dots
@@ -187,6 +197,7 @@ pv.vis.threadall = function() {
                 feature: featureId(d),
                 value: x[featureId(d)],
                 time: time(x),
+                tooltip: tooltip(x)
             }));
 
             layoutThreads(data, d);
@@ -203,7 +214,12 @@ pv.vis.threadall = function() {
         container.append('circle')
             .attr('r', 3);
 
+        container.append('title')
+            .text(tooltip);
+
         container.on('mouseover', function(d, i) {
+            if (brushing) return;
+
             featureContainer.selectAll('.thread').classed('hovered', d2 => d2.id === d.id);
             featureContainer.selectAll('.thread').filter(d2 => d2.id === d.id).raise();
         }).on('mouseout', function() {
@@ -223,16 +239,15 @@ pv.vis.threadall = function() {
 
     function layoutFeatures() {
         featureData.forEach((f, i) => {
-            f.x = featureScale(i);
-            f.y = maxBarHeight;
+            f.x = 0;
+            f.y = featureScale(i);
         });
     }
 
     function layoutThreads(data, f) {
         data.forEach(d => {
-            d.x = f.scale(d.value);
-            // d.y = -jitterLookup[d.id + '-' + featureId(f)] * maxBarHeight;
-            d.y = yScale(time(d));
+            d.x = xScale(time(d));
+            d.y = f.scale(d.value);
         });
     }
 
