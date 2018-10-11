@@ -22,8 +22,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Thread Messages
     const detailContainer = d3.select('.threadlet-detail'),
-        detailVis = pv.vis.thread();
+        detailVis = pv.vis.thread()
+            .on('hover', function(d) {
+                messageData = [d];
+                redrawView(messageContainer, messageVis, messageData);
+            });
     let detailData = [];
+
+    // Message
+    const messageContainer = d3.select('.threadlet-message'),
+        messageVis = pv.vis.message();
+    let messageData = [];
 
     // Make the vis responsive to window resize
     window.onresize = _.throttle(update, 100);
@@ -48,7 +57,8 @@ document.addEventListener('DOMContentLoaded', function() {
             });
 
             // Starting time of the thread
-            t.time = t.messages[0].time;
+            t.startTime = t.messages[0].time;
+            t.endTime = _.last(t.messages).time;
 
             // Tooltip
             t.tooltip = 'Started: ' + d3.timeFormat('%c')(t.time);
@@ -59,6 +69,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         overviewData = featureData.threads.slice(0, 3);
         detailData = featureData.threads[0].messages;
+        messageData = detailData.slice(0, 1);
 
         // Build the vises
         update();
@@ -71,6 +82,7 @@ document.addEventListener('DOMContentLoaded', function() {
         redrawView(featureContainer, featureVis, featureData);
         redrawView(overviewContainer, overviewVis, overviewData);
         redrawView(detailContainer, detailVis, detailData);
+        redrawView(messageContainer, messageVis, messageData);
     }
 
     function redrawView(container, vis, data, invalidated) {

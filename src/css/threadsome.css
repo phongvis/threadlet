@@ -32,7 +32,7 @@
     stroke-opacity: 0.3;
 }
 
-.pv-threadsome .thread.hovered {
+.pv-threadsome .time.hovered {
     stroke: #ffcc99;
     stroke-opacity: 1;
     stroke-width: 2;

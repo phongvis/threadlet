@@ -18,7 +18,8 @@ pv.vis.threadsome = function() {
 
     let visWidth = 960, visHeight = 600, // Size of the visualization, including margins
         width, height, // Size of the main content, excluding margins
-        visTitle = 'Thread Overview';
+        visTitle = 'Thread Overview',
+        hoveredThreadIdx;
 
     /**
      * Accessors.
@@ -29,7 +30,8 @@ pv.vis.threadsome = function() {
         personId = d => d.id,
         subject = d => d.subject,
         sender = d => d.sender,
-        time = d => d.time,
+        startTime = d => d.startTime,
+        endTime = d => d.endTime,
         recipients = d => d.recipients,
         email = d => d.email;
 
@@ -77,7 +79,8 @@ pv.vis.threadsome = function() {
                     .attr('transform', 'translate(' + labelWidth + ',' + timeIndicatorGap + ')')
                     .append('rect').attr('class', 'background')
                         .on('mousemove', onSelectionMove)
-                        .on('mouseout', onSelectionOut);
+                        .on('mouseout', onSelectionOut)
+                        .on('click', onSelectionClick);
 
                 [personBackgroundContainer, personContainer, threadContainer].forEach(c => {
                     c.attr('transform', 'translate(0, ' + timeIndicatorGap + ')');
@@ -89,9 +92,9 @@ pv.vis.threadsome = function() {
             }
 
             // Sort threads and messages by time.
-            data = _data.sort((a, b) => d3.ascending(time(a), time(b)) || d3.ascending(threadId(a), threadId(b)));
+            data = _data.sort((a, b) => d3.ascending(startTime(a), startTime(b)) || d3.ascending(threadId(a), threadId(b)));
             data.forEach(d => {
-                messages(d).sort((a, b) => d3.ascending(time(a), time(b)) || d3.ascending(messageId(a), messageId(b)));
+                messages(d).sort((a, b) => d3.ascending(startTime(a), startTime(b)) || d3.ascending(messageId(a), messageId(b)));
             });
 
             update();
@@ -120,8 +123,10 @@ pv.vis.threadsome = function() {
             const persons = buildPersonData(data);
             personData = groupPersons(persons);
 
-            xAbsoluteScale.domain(d3.extent(_.flatten(data.map(messages)), time));
-            xRelativeScale.domain(_.range(data.length));
+            if (data.length) {
+                xAbsoluteScale.domain(d3.extent(_.flatten(data.map(t => [startTime(t), endTime(t)]))));
+                xRelativeScale.domain(_.range(data.length));
+            }
 
             const instances = _.flatten(personData.map(p => p.instances));
             instanceSendRecvScale.domain([0, Math.max(d3.max(instances, d => d.senders), d3.max(instances, d => d.receivers))]);
@@ -252,61 +257,6 @@ pv.vis.threadsome = function() {
         return results;
     }
 
-    function buildLineData(persons) {
-        return _.flatten(persons.map(extractLinesFromPerson));
-    }
-
-    function extractLinesFromPerson(p) {
-        // For a person, a line connects consecutive message instances (no other messages in-between)
-        let lastMessageIdx = p.instances[0].messageIdx,
-            firstMessageIdx = lastMessageIdx;
-        const lines = [];
-
-        function addLine() {
-            lines.push({
-                sourceIdx: firstMessageIdx,
-                targetIdx: lastMessageIdx,
-                personId: personId(p),
-                id: personId(p) + '-' + firstMessageIdx + '-' + lastMessageIdx,
-                isGroup: p.isGroup
-            });
-        }
-
-        // Add exclusion line
-        if (p.instances.length > 1) {
-            const firstIdx = p.instances[0].messageIdx,
-                lastIdx = _.last(p.instances).messageIdx;
-            lines.push({
-                exclusion: true,
-                sourceIdx: firstIdx,
-                targetIdx: lastIdx,
-                personId: personId(p),
-                id: personId(p) + '-' + firstIdx + '-' + lastIdx + '-exc',
-                isGroup: p.isGroup
-            });
-        }
-
-        p.instances.slice(1).forEach(m => {
-            // The line breaks if the current messageIdx is not equal to the previous one + 1
-            if (m.messageIdx !== lastMessageIdx + 1) {
-                if (lastMessageIdx !== firstMessageIdx) {
-                    addLine();
-                }
-
-                firstMessageIdx = m.messageIdx;
-            }
-
-            lastMessageIdx = m.messageIdx;
-        });
-
-        // Add the last one as it doesn't break yet
-        if (lastMessageIdx !== firstMessageIdx) {
-            addLine();
-        }
-
-        return lines;
-    }
-
     function addSettings(container) {
         container = container.append('foreignObject').attr('class', 'settings')
             .attr('width', '100%').attr('height', '20px')
@@ -329,9 +279,9 @@ pv.vis.threadsome = function() {
 
         // Highlight thread
         const offset = (xRelativeScale.step() - xRelativeScale.bandwidth()) / 2;
-        const threadIdx = Math.floor((x - offset) / xRelativeScale.step());
-        threadContainer.selectAll('.thread-background').classed('active', (d, i) => threadIdx === i);
-        threadContainer.selectAll('.time').classed('hovered', (d, i) => threadIdx === i);
+        hoveredThreadIdx = Math.floor((x - offset) / xRelativeScale.step());
+        threadContainer.selectAll('.thread-background').classed('active', (d, i) => hoveredThreadIdx === i);
+        threadContainer.selectAll('.time').classed('hovered', (d, i) => hoveredThreadIdx === i);
 
         // Highlight person
         const personIdx = Math.floor(y / personHeight);
@@ -342,6 +292,10 @@ pv.vis.threadsome = function() {
         threadContainer.selectAll('.thread-background').classed('active', false);
         threadContainer.selectAll('.time').classed('hovered', false);
         personBackgroundContainer.selectAll('.person-background').classed('hidden', true);
+    }
+
+    function onSelectionClick() {
+        listeners.call('click', this, data[hoveredThreadIdx]);
     }
 
     function enterPersons(selection) {
@@ -424,20 +378,13 @@ pv.vis.threadsome = function() {
             .attr('transform', d => 'translate(' + d.x + ',' + d.y + ')')
             .attr('opacity', 0);
 
-        container.append('circle')
-            .attr('r', 5)
-            .style('fill', 'steelblue')
-            .style('cursor', 'pointer');
-
-        container.on('click', function(d) {
-            listeners.call('click', this, d);
-        });
-
         container.append('rect').attr('class', 'thread-background');
 
         const timeContainer = container.append('g').attr('class', 'time');
-        timeContainer.append('path').attr('class', 'head');
-        timeContainer.append('path').attr('class', 'main');
+        timeContainer.append('path').attr('class', 'start');
+        timeContainer.append('path').attr('class', 'end');
+        timeContainer.append('path').attr('class', 'main-start');
+        timeContainer.append('path').attr('class', 'main-end');
         timeContainer.append('path').attr('class', 'tail');
     }
 
@@ -455,22 +402,19 @@ pv.vis.threadsome = function() {
                 .attr('width', xRelativeScale.step())
                 .attr('height', personHeight * personData.length - 1);
 
-            container.select('circle')
-                .attr('cx', xRelativeScale.bandwidth() / 2)
-                .attr('cy', -10);
-
-            // const firstInstanceY = personData.find(p => p.instances.find(m => m.messageIdx === i)).y;
             const headHeight = 6;
 
             // Reset to the start because of the time positions
             container.select('.time')
                 .attr('transform', 'translate(' + -d.x + ',' + -d.y + ')');
-            container.select('.head')
-                .attr('d', getLine([[d.tx, d.ty], [d.tx, d.ty + headHeight]]));
-
-            container.select('.main')
-                .attr('d', getCurve([[d.tx, d.ty + headHeight], [d.x + xRelativeScale.bandwidth() / 2, d.y - headHeight]]));
-
+            container.select('.start')
+                .attr('d', getLine([[d.sx, d.sy], [d.sx, d.sy + headHeight]]));
+            container.select('.main-start')
+                .attr('d', getCurve([[d.sx, d.sy + headHeight], [d.x + xRelativeScale.bandwidth() / 2, d.y - headHeight]]));
+            container.select('.end')
+                .attr('d', getLine([[d.ex, d.ey], [d.ex, d.ey + headHeight]]));
+            container.select('.main-end')
+                .attr('d', getCurve([[d.ex, d.ey + headHeight], [d.x + xRelativeScale.bandwidth() / 2, d.y - headHeight]]));
             container.select('.tail')
                 .attr('d', getLine([[d.x + xRelativeScale.bandwidth() / 2, d.y - headHeight], [d.x + xRelativeScale.bandwidth() / 2, d.y]]));
         });
@@ -495,8 +439,9 @@ pv.vis.threadsome = function() {
         threads.forEach((t, i) => {
             t.x = xRelativeScale(i);
             t.y = 0;
-            t.tx = xAbsoluteScale(time(t)) + 0.5;
-            t.ty = 1 - timeIndicatorGap;
+            t.sx = xAbsoluteScale(startTime(t)) + 0.5;
+            t.ex = xAbsoluteScale(endTime(t)) + 0.5;
+            t.sy = t.ey = 1 - timeIndicatorGap;
         });
     }
 
@@ -504,14 +449,6 @@ pv.vis.threadsome = function() {
         instances.forEach(i => {
             i.x = data[i.threadIdx].x;
             i.y = 1;
-        });
-    }
-
-    function layoutLines(lines, messages) {
-        lines.forEach(l => {
-            l.x1 = messages[l.sourceIdx].x;
-            l.x2 = messages[l.targetIdx].x;
-            l.y = personLookup[l.personId].y + (personHeight - radius) / 2 + 1;
         });
     }
 

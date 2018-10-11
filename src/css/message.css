@@ -1,0 +1,7 @@
+.pv-message text {
+    dominant-baseline: text-before-edge;
+}
+
+.pv-message .subject {
+    fill: black;
+}

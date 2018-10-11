@@ -59,7 +59,7 @@ pv.vis.thread = function() {
     /**
      * D3.
      */
-    const listeners = d3.dispatch('click'),
+    const listeners = d3.dispatch('click', 'hover'),
         xAbsoluteScale = d3.scaleUtc(),
         xRelativeScale = d3.scaleLinear(),
         xAxis = d3.axisTop().scale(xAbsoluteScale);
@@ -436,6 +436,8 @@ pv.vis.thread = function() {
         timeContainer.selectAll('.message-background').classed('hidden', (d, i) => messageIdx !== i);
         timeContainer.selectAll('.time').classed('hovered', (d, i) => messageIdx === i);
 
+        listeners.call('hover', this, data[messageIdx]);
+
         // Highlight person
         const personIdx = Math.floor(y / personHeight);
         personBackgroundContainer.selectAll('.person-background').classed('hidden', (d, i) => personIdx !== i);
@@ -445,6 +447,8 @@ pv.vis.thread = function() {
         timeContainer.selectAll('.message-background').classed('hidden', true);
         timeContainer.selectAll('.time').classed('hovered', false);
         personBackgroundContainer.selectAll('.person-background').classed('hidden', true);
+
+        listeners.call('hover', this, null);
     }
 
     function enterPersons(selection) {

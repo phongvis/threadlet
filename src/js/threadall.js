@@ -23,7 +23,7 @@ pv.vis.threadall = function() {
     let threadId = d => d.threadId,
         featureId = d => d.name,
         featureLabel = d => d.label,
-        time = d => d.time
+        startTime = d => d.startTime,
         tooltip = d => d.tooltip;
 
     /**
@@ -95,7 +95,7 @@ pv.vis.threadall = function() {
         // Updates that depend only on data change
         if (dataChanged) {
             featureScale.domain(d3.range(featureData.length));
-            xScale.domain(d3.extent(threadData, time));
+            xScale.domain(d3.extent(threadData, startTime));
         }
 
         // Axis
@@ -196,7 +196,7 @@ pv.vis.threadall = function() {
                 id: threadId(x),
                 feature: featureId(d),
                 value: x[featureId(d)],
-                time: time(x),
+                startTime: startTime(x),
                 tooltip: tooltip(x)
             }));
 
@@ -246,7 +246,7 @@ pv.vis.threadall = function() {
 
     function layoutThreads(data, f) {
         data.forEach(d => {
-            d.x = xScale(time(d));
+            d.x = xScale(startTime(d));
             d.y = f.scale(d.value);
         });
     }
