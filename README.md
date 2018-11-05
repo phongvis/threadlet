@@ -1,6 +1,3 @@
-# threadlet
-*Visual exploration of email threads.*
-
 ## Documentation
 - [Main folder](https://paper.dropbox.com/folder/show/threadlet-e.1gg8YzoPEhbTkrhvQwJ2zz3XHfXpF33zCKiYXzPLckddKUj0H9Uy)
 - [Active learning proposal](https://paper.dropbox.com/doc/Active-Learning-in-ThreadSift--AQvwGkzXl68~xDDWVkrzCq1nAg-stiulAPO6PZnGsFCB9llo)
