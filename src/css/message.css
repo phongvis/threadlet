@@ -1,7 +1,31 @@
-.pv-message text {
-    dominant-baseline: text-before-edge;
+.main-vis {
+    height: calc(100% - 20px);
+}
+
+.pv-message {
+    height: 100%;
+}
+
+.pv-message .message {
+    height: 100%;
+    display: grid;
+    grid-template-rows: 1.2em 1.2em 1fr;
+    gap: 3px;
+    padding: 3px;
 }
 
 .pv-message .subject {
-    fill: black;
+    color: black;
+    font-weight: bold;
+    overflow: hidden;
+}
+
+.pv-message .header {
+    color: hsl(0, 0%, 50%);
+    overflow: hidden;
+}
+
+.pv-message .message .body {
+    color: hsl(0, 0%, 25%);
+    overflow: scroll;
 }

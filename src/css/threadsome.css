@@ -35,7 +35,7 @@
 .pv-threadsome .time.hovered {
     stroke: #ffcc99;
     stroke-opacity: 1;
-    stroke-width: 2;
+    stroke-width: 2px;
 }
 
 .pv-threadsome .thread .time .head {

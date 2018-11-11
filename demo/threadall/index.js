@@ -1,4 +1,4 @@
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
     // Thread Features
     const featureContainer = d3.select('.threadlet-features'),
         featureVis = pv.vis.threadall()

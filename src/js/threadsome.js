@@ -28,7 +28,6 @@ pv.vis.threadsome = function() {
         messages = d => d.messages,
         messageId = d => d.messageId,
         personId = d => d.id,
-        subject = d => d.subject,
         sender = d => d.sender,
         startTime = d => d.startTime,
         endTime = d => d.endTime,
@@ -386,6 +385,7 @@ pv.vis.threadsome = function() {
         timeContainer.append('path').attr('class', 'main-start');
         timeContainer.append('path').attr('class', 'main-end');
         timeContainer.append('path').attr('class', 'tail');
+        timeContainer.append('line').attr('class', 'range');
     }
 
     function updateThreads(selection) {
@@ -402,21 +402,28 @@ pv.vis.threadsome = function() {
                 .attr('width', xRelativeScale.step())
                 .attr('height', personHeight * personData.length - 1);
 
-            const headHeight = 6;
+            const headHeight = 0;
 
             // Reset to the start because of the time positions
             container.select('.time')
                 .attr('transform', 'translate(' + -d.x + ',' + -d.y + ')');
             container.select('.start')
                 .attr('d', getLine([[d.sx, d.sy], [d.sx, d.sy + headHeight]]));
+                // .attr('d', getLine([[d.sx, d.ty], [d.sx, d.ty + headHeight]]));
             container.select('.main-start')
                 .attr('d', getCurve([[d.sx, d.sy + headHeight], [d.x + xRelativeScale.bandwidth() / 2, d.y - headHeight]]));
+                // .attr('d', getCurve([[d.sx, d.ty + headHeight], [d.x + xRelativeScale.bandwidth() / 2, d.y - headHeight]]));
             container.select('.end')
                 .attr('d', getLine([[d.ex, d.ey], [d.ex, d.ey + headHeight]]));
             container.select('.main-end')
                 .attr('d', getCurve([[d.ex, d.ey + headHeight], [d.x + xRelativeScale.bandwidth() / 2, d.y - headHeight]]));
             container.select('.tail')
                 .attr('d', getLine([[d.x + xRelativeScale.bandwidth() / 2, d.y - headHeight], [d.x + xRelativeScale.bandwidth() / 2, d.y]]));
+            // container.select('.range')
+            //     .attr('x1', d.sx)
+            //     .attr('x2', d.ex)
+            //     .attr('y1', d.ty)
+            //     .attr('y2', d.ty);
         });
     }
 
@@ -442,6 +449,7 @@ pv.vis.threadsome = function() {
             t.sx = xAbsoluteScale(startTime(t)) + 0.5;
             t.ex = xAbsoluteScale(endTime(t)) + 0.5;
             t.sy = t.ey = 1 - timeIndicatorGap;
+            t.ty = 3 + i * 3 - timeIndicatorGap;
         });
     }
 

@@ -7,10 +7,7 @@ pv.vis.message = function() {
     /**
      * Visual configs.
      */
-    const margin = { top: 23, right: 5, bottom: 5, left: 5 };
-
     let visWidth = 960, visHeight = 600, // Size of the visualization, including margins
-        width, height, // Size of the main content, excluding margins
         timeFormat = d3.timeFormat('%b %d, %Y, %X'),
         visTitle = 'Message';
 
@@ -20,8 +17,7 @@ pv.vis.message = function() {
     let subject = d => d.subject,
         sender = d => d.sender,
         time = d => d.time,
-        recipients = d => d.recipients,
-        email = d => d.email;
+        body = d => d.body;
 
     /**
      * Data binding to DOM elements.
@@ -41,10 +37,10 @@ pv.vis.message = function() {
         selection.each(function(_data) {
             // Initialize
             if (!this.visInitialized) {
-                const container = d3.select(this).append('g').attr('class', 'pv-message');
-                visContainer = container.append('g').attr('class', 'main-vis');
-
+                const container = d3.select(this).append('div').attr('class', 'pv-message');
                 addSettings(container);
+
+                visContainer = container.append('div').attr('class', 'main-vis');
 
                 this.visInitialized = true;
             }
@@ -61,10 +57,6 @@ pv.vis.message = function() {
      */
     function update() {
         // Canvas update
-        width = visWidth - margin.left - margin.right;
-        height = visHeight - margin.top - margin.bottom;
-
-        visContainer.attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
 
         /**
          * Computation.
@@ -81,9 +73,8 @@ pv.vis.message = function() {
     }
 
     function addSettings(container) {
-        container = container.append('foreignObject').attr('class', 'settings')
-            .attr('width', '100%').attr('height', '20px')
-            .append('xhtml:div').attr('class', 'vis-header');
+        container = container.append('div').attr('class', 'settings')
+            .append('div').attr('class', 'vis-header');
 
         container.html(`
             <div class='title'>${visTitle}</div>
@@ -91,17 +82,17 @@ pv.vis.message = function() {
     }
 
     function enterMessages(selection) {
-        selection.append('text').attr('class', 'header');
-        selection.append('text').attr('class', 'subject');
+        selection.append('div').attr('class', 'header');
+        selection.append('div').attr('class', 'subject');
+        selection.append('div').attr('class', 'body');
     }
 
     function updateMessages(selection) {
         selection.each(function(d) {
             const container = d3.select(this);
             container.select('.header').html(d ? ('from: ' + sender(d) + ' ' + timeFormat(time(d))) : '');
-            container.select('.subject')
-                .attr('dy', '1.5em')
-                .html(d ? subject(d) : '');
+            container.select('.subject').html(d ? subject(d) : '');
+            container.select('.body').html(d ? body(d) : '');
         });
     }
 
@@ -109,8 +100,6 @@ pv.vis.message = function() {
      * Sets/gets the width of the visualization.
      */
     module.width = function(value) {
-        if (!arguments.length) return visWidth;
-        visWidth = value;
         return this;
     };
 
@@ -118,8 +107,6 @@ pv.vis.message = function() {
      * Sets/gets the height of the visualization.
      */
     module.height = function(value) {
-        if (!arguments.length) return visHeight;
-        visHeight = value;
         return this;
     };
 
