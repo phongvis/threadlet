@@ -165,8 +165,9 @@ def updateThreadObjectsWithMDSEmbeddingCoordinates(threadObjectDF, proxyValues):
 
 def main():
     # Load the email data objects
-    inputFileName = "threads-50"
+    inputFileName = "threads-1000"
     fileExtension = ".json"
+    print(inputFileName + fileExtension)
     threadObjects = pd.read_json(inputFileName + fileExtension)
 
     threadObjects.head()
@@ -180,7 +181,7 @@ def main():
     print(threadObjects.head())
     print("----------------------")
     print(threadObjectsRevised.head())
-    threadObjectsRevised.to_json(inputFileName + "_rev" + fileExtension, orient='records')
+    threadObjectsRevised.to_json(inputFileName + "_revV2" + fileExtension, orient='records')
 
 if __name__ == "__main__":
     main()
