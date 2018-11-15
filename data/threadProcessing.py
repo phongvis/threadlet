@@ -155,7 +155,7 @@ def applyTSNE(dataObject):
     scaler.fit(dataObject)
     scaledData = scaler.transform(dataObject)
     results_tsne = TSNE().fit_transform(scaledData)
-    sns.scatterplot(x = results_tsne[:, 0], y = results_tsne[:, 1])
+    sns.scatterplot(x = results_tsne[:, 0], y = results_tsne[:, 1], alpha=0.3)
     plt.show()
     return results_tsne[:, 0], results_tsne[:, 1]
 
