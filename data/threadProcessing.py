@@ -145,9 +145,19 @@ def apply2DMDS(dataObject):
     scaledData = scaler.transform(dataObject)
     mds = manifold.MDS(2, max_iter=100, n_init=1)
     Y = mds.fit_transform(scaledData)
-    # sns.scatterplot(x = Y[:, 0], y = Y[:, 1])
-    # plt.show()
+    sns.scatterplot(x = Y[:, 0], y = Y[:, 1])
+    plt.show()
     return Y[:, 0], Y[:, 1]
+
+def applyTSNE(dataObject):
+    from sklearn.manifold import TSNE
+    scaler = MinMaxScaler()
+    scaler.fit(dataObject)
+    scaledData = scaler.transform(dataObject)
+    results_tsne = TSNE().fit_transform(scaledData)
+    sns.scatterplot(x = results_tsne[:, 0], y = results_tsne[:, 1])
+    plt.show()
+    return results_tsne[:, 0], results_tsne[:, 1]
 
 def updateThreadObjectsWithMeasures(threadObjectDF, measureNames, proxyValues):
 
@@ -160,6 +170,13 @@ def updateThreadObjectsWithMDSEmbeddingCoordinates(threadObjectDF, proxyValues):
     # revise the thread objects with the MDS coordinates
     threadObjectDF["mdsX"] = mdsX.astype(float)
     threadObjectDF["mdsY"] = mdsY.astype(float)
+    return threadObjectDF
+
+def updateThreadObjectsWithtSNEEmbeddingCoordinates(threadObjectDF, proxyValues):
+    tSNEX, tSNEY = applyTSNE(proxyValues)
+    # revise the thread objects with the MDS coordinates
+    threadObjectDF["tSNEX"] = tSNEX.astype(float)
+    threadObjectDF["tSNEY"] = tSNEY.astype(float)
     return threadObjectDF
 
 
@@ -177,6 +194,7 @@ def main():
 
     threadObjectsRevised = updateThreadObjectsWithMeasures(threadObjects, computedThreadMeasureNames, proxies)
     threadObjectsRevised = updateThreadObjectsWithMDSEmbeddingCoordinates(threadObjectsRevised, proxies)
+    threadObjectsRevised = updateThreadObjectsWithtSNEEmbeddingCoordinates(threadObjectsRevised, proxies)
 
     print(threadObjects.head())
     print("----------------------")
