@@ -37,7 +37,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     // Make the vis responsive to window resize
     window.onresize = _.throttle(update, 100);
 
-    d3.json('../../data/threads-1000_revV2.json').then(data => {
+    d3.json('../../data/threads-100_revV2.json').then(data => {
         featureData = {
             features: [
                 { name: 'Engagement', label: 'Engagement' },
@@ -73,6 +73,8 @@ document.addEventListener('DOMContentLoaded', async function() {
 
         // Build the vises
         update();
+
+        testRestAPI('http://127.0.0.1:5000/?params=');
     });
 
     /**
@@ -90,5 +92,13 @@ document.addEventListener('DOMContentLoaded', async function() {
         vis.width(rect[0]).height(rect[1]);
         if (invalidated) vis.invalidate();
         container.datum(data).call(vis);
+    }
+
+    function testRestAPI(url) {
+        const s = featureData.threads.slice(0, 10).map(d => d.threadId).join(',');
+        $.ajax(url + s)
+            .done(r => {
+                console.log(r);
+            });
     }
 });
