@@ -37,7 +37,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     // Make the vis responsive to window resize
     window.onresize = _.throttle(update, 100);
 
-    d3.json('../../data/threads-50_rev.json').then(data => {
+    d3.json('../../data/threads-1000_revV2.json').then(data => {
         featureData = {
             features: [
                 { name: 'Engagement', label: 'Engagement' },
