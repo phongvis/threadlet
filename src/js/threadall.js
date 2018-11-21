@@ -45,7 +45,7 @@ pv.vis.threadall = function() {
      * D3.
      */
     const listeners = d3.dispatch('click', 'brush'),
-        featureScale = d3.scaleBand().paddingInner(0.15),
+        featureScale = d3.scaleBand().paddingInner(0.1),
         xScale = d3.scaleUtc(),
         xAxis = d3.axisBottom(xScale);
 
@@ -182,7 +182,7 @@ pv.vis.threadall = function() {
             // Label
             container.select('text')
                 .attr('x', width / 2)
-                .attr('y', 0);
+                .attr('y', -2);
 
             // Scale
             d.scale.rangeRound([featureScale.bandwidth(), 20]).nice();

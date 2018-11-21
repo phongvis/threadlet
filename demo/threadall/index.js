@@ -11,6 +11,18 @@ document.addEventListener('DOMContentLoaded', async function() {
             });
     let featureData = [];
 
+    // Feature Projection
+    const projectionContainer = d3.select('.threadlet-projection'),
+    projectionVis = pv.vis.featureProjection()
+        .on('brush', function(ids) {
+            overviewData = featureData.threads.filter(t => ids.includes(t.threadId));
+            redrawView(overviewContainer, overviewVis, overviewData, true);
+        }).on('click', function(d) {
+            detailData = d.messages;
+            redrawView(detailContainer, detailVis, detailData, true);
+        });
+    let projectionData = [];
+
     // Thread Overview
     const overviewContainer = d3.select('.threadlet-some'),
         overviewVis = pv.vis.threadsome()
@@ -67,6 +79,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             });
         });
 
+        projectionData = getProjectionData(featureData.threads);
         overviewData = featureData.threads.slice(0, 3);
         detailData = featureData.threads[0].messages;
         messageData = detailData.slice(0, 1);
@@ -74,7 +87,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         // Build the vises
         update();
 
-        testRestAPI('http://127.0.0.1:5000/?params=');
+        // testRestAPI('http://127.0.0.1:5000/?params=');
     });
 
     /**
@@ -82,6 +95,7 @@ document.addEventListener('DOMContentLoaded', async function() {
      */
     function update() {
         redrawView(featureContainer, featureVis, featureData);
+        redrawView(projectionContainer, projectionVis, projectionData);
         redrawView(overviewContainer, overviewVis, overviewData);
         redrawView(detailContainer, detailVis, detailData);
         redrawView(messageContainer, messageVis, messageData);
@@ -100,5 +114,9 @@ document.addEventListener('DOMContentLoaded', async function() {
             .done(r => {
                 console.log(r);
             });
+    }
+
+    function getProjectionData(data) {
+        return data.map(d => ({ threadId: d.threadId, dim1: d.tSNEX, dim2: d.tSNEY }));
     }
 });

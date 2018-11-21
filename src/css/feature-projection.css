@@ -1,0 +1,19 @@
+.pv-feature-projection .brush .selection {
+    fill: orange;
+    stroke: orange;
+    cursor: default;
+}
+
+.pv-feature-projection .thread {
+    opacity: 0.5;
+}
+
+.pv-feature-projection .thread.brushed {
+    fill: orange;
+    opacity: 1;
+}
+
+.pv-feature-projection .thread.hovered {
+    fill: red;
+    opacity: 1;
+}
