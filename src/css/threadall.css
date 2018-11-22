@@ -1,9 +1,3 @@
-.pv-threadall .brush .selection {
-    fill: orange;
-    stroke: orange;
-    cursor: default;
-}
-
 .pv-threadall .feature .label {
     fill: black;
     text-anchor: middle;

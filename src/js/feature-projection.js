@@ -1,5 +1,5 @@
 /**
- * A visualization of email threads.
+ * A simple scatter plot of email threads.
  * Data input:
  * - array of threads, each has:
  *  - threadId
@@ -56,7 +56,7 @@ pv.vis.featureProjection = function() {
         selection.each(function(_data) {
             // Initialize
             if (!this.visInitialized) {
-                const container = d3.select(this).append('g').attr('class', 'pv-thread-projection');
+                const container = d3.select(this).append('g').attr('class', 'pv-feature-projection');
                 visContainer = container.append('g').attr('class', 'main-vis');
                 xAxisContainer = visContainer.append('g').attr('class', 'axis x-axis');
                 yAxisContainer = visContainer.append('g').attr('class', 'axis y-axis');
@@ -120,13 +120,13 @@ pv.vis.featureProjection = function() {
             isBrushed = d => d.x >= s[0][0] && d.x <= s[1][0] && d.y >= s[0][1] && d.y <= s[1][1];
 
             // Find the brushed elements using the brushing feature, then brush the same ids from other features
-            d3.select(this.parentNode).selectAll('.thread').each(function(d) {
-                if (isBrushed(d)) brushedIds.push(d.id);
+            threadContainer.selectAll('.thread').each(function(d) {
+                if (isBrushed(d)) brushedIds.push(threadId(d));
             });
         }
 
-        threadContainer.selectAll('.thread').classed('brushed', d2 => brushedIds.includes(d2.id));
-        threadContainer.selectAll('.thread').filter(d2 => brushedIds.includes(d2.id)).raise();
+        threadContainer.selectAll('.thread').classed('brushed', d2 => brushedIds.includes(threadId(d2)));
+        threadContainer.selectAll('.thread').filter(d2 => brushedIds.includes(threadId(d2))).raise();
     }
 
     function onBrushended() {
@@ -147,12 +147,12 @@ pv.vis.featureProjection = function() {
         container.on('mouseover', function(d, i) {
             if (brushing) return;
 
-            threadContainer.selectAll('.thread').classed('hovered', d2 => d2.id === d.id);
-            threadContainer.selectAll('.thread').filter(d2 => d2.id === d.id).raise();
+            threadContainer.selectAll('.thread').classed('hovered', d2 => threadId(d2) === threadId(d));
+            threadContainer.selectAll('.thread').filter(d2 => threadId(d2) === threadId(d)).raise();
         }).on('mouseout', function() {
             threadContainer.selectAll('.thread').classed('hovered', false);
         }).on('click', function(d) {
-            listeners.call('click', this, threadData.find(t => threadId(t) === d.id));
+            listeners.call('click', this, threadData.find(t => threadId(t) === threadId(d)));
         });
     }
 

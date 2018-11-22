@@ -76,7 +76,8 @@ text {
 /* Brush */
 .brush .selection {
     fill-opacity: 0.2;
-    stroke-opacity: 0;
+    fill: orange;
+    stroke: orange;
 }
 
 .brush .overlay {

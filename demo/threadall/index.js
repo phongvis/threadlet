@@ -49,6 +49,8 @@ document.addEventListener('DOMContentLoaded', async function() {
     // Make the vis responsive to window resize
     window.onresize = _.throttle(update, 100);
 
+    const timeFormat = d3.timeFormat('%d-%b-%Y');
+
     d3.json('../../data/threads-100_revV2.json').then(data => {
         featureData = {
             features: [
@@ -73,9 +75,9 @@ document.addEventListener('DOMContentLoaded', async function() {
             t.endTime = _.last(t.messages).time;
 
             // Tooltip
-            t.tooltip = 'Started: ' + d3.timeFormat('%c')(t.time);
+            t.tooltip = timeFormat(t.startTime) + ' ⟶ ' + timeFormat(t.endTime);
             featureData.features.forEach(feature => {
-                t.tooltip += '\n' + feature.label + ': ' + t[feature.name];
+                t.tooltip += '\n' + feature.label + ': ' + parseFloat(t[feature.name].toFixed(1)).toString();
             });
         });
 
