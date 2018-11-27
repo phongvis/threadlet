@@ -44,7 +44,7 @@ pv.vis.threadall = function() {
     /**
      * D3.
      */
-    const listeners = d3.dispatch('click', 'brush'),
+    const listeners = d3.dispatch('click', 'brush', 'brushend', 'hover'),
         featureScale = d3.scaleBand().paddingInner(0.1),
         xScale = d3.scaleUtc(),
         xAxis = d3.axisBottom(xScale);
@@ -152,15 +152,25 @@ pv.vis.threadall = function() {
             });
         }
 
+        highlightBrushedItems();
+        listeners.call('brush', module, brushedIds);
+    }
+
+    function highlightBrushedItems() {
         featureContainer.selectAll('.thread').classed('brushed', d2 => brushedIds.includes(d2.id));
         featureContainer.selectAll('.thread').filter(d2 => brushedIds.includes(d2.id)).raise();
+    }
+
+    function highlightHoveredItem(id) {
+        featureContainer.selectAll('.thread').classed('hovered', d2 => d2.id === id);
+        featureContainer.selectAll('.thread').filter(d2 => d2.id === id).raise();
     }
 
     function onBrushended() {
         onBrushed.call(this);
         brushing = false;
 
-        listeners.call('brush', this, brushedIds);
+        listeners.call('brushend', module, brushedIds);
     }
 
     function updateFeatures(selection) {
@@ -212,7 +222,7 @@ pv.vis.threadall = function() {
 
         // Circle
         container.append('circle')
-            .attr('r', 3);
+            .attr('r', 4);
 
         container.append('title')
             .text(tooltip);
@@ -220,12 +230,13 @@ pv.vis.threadall = function() {
         container.on('mouseover', function(d, i) {
             if (brushing) return;
 
-            featureContainer.selectAll('.thread').classed('hovered', d2 => d2.id === d.id);
-            featureContainer.selectAll('.thread').filter(d2 => d2.id === d.id).raise();
+            highlightHoveredItem(d.id);
+            listeners.call('hover', module, d.id);
         }).on('mouseout', function() {
             featureContainer.selectAll('.thread').classed('hovered', false);
+            listeners.call('hover', module, null);
         }).on('click', function(d) {
-            listeners.call('click', this, threadData.find(t => threadId(t) === d.id));
+            listeners.call('click', this, d.id);
         });
     }
 
@@ -284,6 +295,19 @@ pv.vis.threadall = function() {
     module.invalidate = function() {
         dataChanged = true;
     };
+
+    /**
+     * Handles items that are brushed externally.
+     */
+    module.onBrush = function(ids) {
+        brushedIds = ids;
+        highlightBrushedItems();
+    };
+
+    /**
+     * Handles item that is hovered externally.
+     */
+    module.onHover = highlightHoveredItem;
 
     /**
      * Binds custom events.

@@ -21,14 +21,15 @@ pv.vis.thread = function() {
         messageWidth,
         sortGroupsMethod = 'time', // time/engagement
         timeGrouping = false,
-        longConnector = true;
+        longConnector = true,
+        hoveredMessageIdx,
+        selectedMessage;
 
     /**
      * Accessors.
      */
     let messageId = d => d.messageId,
         personId = d => d.id,
-        subject = d => d.subject,
         sender = d => d.sender,
         time = d => d.time,
         recipients = d => d.recipients,
@@ -84,7 +85,8 @@ pv.vis.thread = function() {
                     .attr('transform', 'translate(' + labelWidth + ',' + timeIndicatorGap + ')')
                     .append('rect').attr('class', 'background')
                         .on('mousemove', onSelectionMove)
-                        .on('mouseout', onSelectionOut);
+                        .on('mouseout', onSelectionOut)
+                        .on('click', onSelectionClick);
 
                 [personBackgroundContainer, lineContainer, personContainer, timeContainer].forEach(c => {
                     c.attr('transform', 'translate(0, ' + timeIndicatorGap + ')');
@@ -432,11 +434,11 @@ pv.vis.thread = function() {
             y = d3.mouse(this)[1];
 
         // Highlight message
-        const messageIdx = Math.floor((x + messageWidth / 2) / messageWidth);
-        timeContainer.selectAll('.message-background').classed('hidden', (d, i) => messageIdx !== i);
-        timeContainer.selectAll('.time').classed('hovered', (d, i) => messageIdx === i);
+        hoveredMessageIdx = Math.floor((x + messageWidth / 2) / messageWidth);
+        timeContainer.selectAll('.message-background').classed('hidden', (d, i) => hoveredMessageIdx !== i);
+        timeContainer.selectAll('.time').classed('hovered', (d, i) => hoveredMessageIdx === i);
 
-        listeners.call('hover', this, data[messageIdx]);
+        listeners.call('hover', this, data[hoveredMessageIdx]);
 
         // Highlight person
         const personIdx = Math.floor(y / personHeight);
@@ -449,6 +451,19 @@ pv.vis.thread = function() {
         personBackgroundContainer.selectAll('.person-background').classed('hidden', true);
 
         listeners.call('hover', this, null);
+    }
+
+    function onSelectionClick() {
+        if (data[hoveredMessageIdx] === selectedMessage) {
+            selectedMessage = null; // click again to deselect
+        } else {
+            selectedMessage = data[hoveredMessageIdx];
+        }
+
+        timeContainer.selectAll('.message-background').classed('selected', d => d === selectedMessage);
+        timeContainer.selectAll('.time').classed('selected', d => d === selectedMessage);
+
+        listeners.call('click', this, selectedMessage);
     }
 
     function enterPersons(selection) {
@@ -668,6 +683,15 @@ pv.vis.thread = function() {
     module.height = function(value) {
         if (!arguments.length) return visHeight;
         visHeight = value;
+        return this;
+    };
+
+    /**
+     * Sets/gets the selected message.
+     */
+    module.selectedMessage = function(value) {
+        if (!arguments.length) return selectedMessage;
+        selectedMessage = value;
         return this;
     };
 

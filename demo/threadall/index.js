@@ -1,26 +1,12 @@
 document.addEventListener('DOMContentLoaded', async function() {
     // Thread Features
     const featureContainer = d3.select('.threadlet-features'),
-        featureVis = pv.vis.threadall()
-            .on('brush', function(ids) {
-                overviewData = featureData.threads.filter(t => ids.includes(t.threadId));
-                redrawView(overviewContainer, overviewVis, overviewData, true);
-            }).on('click', function(d) {
-                detailData = d.messages;
-                redrawView(detailContainer, detailVis, detailData, true);
-            });
+        featureVis = pv.vis.threadall();
     let featureData = [];
 
     // Feature Projection
     const projectionContainer = d3.select('.threadlet-projection'),
-    projectionVis = pv.vis.featureProjection()
-        .on('brush', function(ids) {
-            overviewData = featureData.threads.filter(t => ids.includes(t.threadId));
-            redrawView(overviewContainer, overviewVis, overviewData, true);
-        }).on('click', function(d) {
-            detailData = d.messages;
-            redrawView(detailContainer, detailVis, detailData, true);
-        });
+    projectionVis = pv.vis.featureProjection();
     let projectionData = [];
 
     // Thread Overview
@@ -36,6 +22,11 @@ document.addEventListener('DOMContentLoaded', async function() {
     const detailContainer = d3.select('.threadlet-detail'),
         detailVis = pv.vis.thread()
             .on('hover', function(d) {
+                if (!detailVis.selectedMessage()) {
+                    messageData = [d];
+                    redrawView(messageContainer, messageVis, messageData);
+                }
+            }).on('click', function(d) {
                 messageData = [d];
                 redrawView(messageContainer, messageVis, messageData);
             });
@@ -49,7 +40,10 @@ document.addEventListener('DOMContentLoaded', async function() {
     // Make the vis responsive to window resize
     window.onresize = _.throttle(update, 100);
 
+    const threadLinkedViews = [ featureVis, projectionVis ];
     const timeFormat = d3.timeFormat('%d-%b-%Y');
+
+    registerThreadLinkedViews();
 
     d3.json('../../data/threads-100_revV2.json').then(data => {
         featureData = {
@@ -119,6 +113,44 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
 
     function getProjectionData(data) {
-        return data.map(d => ({ threadId: d.threadId, dim1: d.tSNEX, dim2: d.tSNEY }));
+        return data.map(d => ({ threadId: d.threadId, dim1: d.tSNEX, dim2: d.tSNEY, tooltip: d.tooltip }));
+    }
+
+    function registerThreadLinkedViews() {
+        threadLinkedViews.forEach(v => {
+            v.on('brush', onThreadsBrush)
+            .on('brushend', onThreadsBrushend)
+            .on('hover', onThreadHover)
+            .on('click', onThreadClick);
+    });
+
+    }
+    function onThreadsBrush(ids) {
+        threadLinkedViews.forEach(v => {
+            if (v !== this) v.onBrush(ids);
+        });
+    }
+
+    function onThreadsBrushend(ids) {
+        overviewData = featureData.threads.filter(t => ids.includes(t.threadId));
+        redrawView(overviewContainer, overviewVis, overviewData, true);
+    }
+
+    function onThreadHover(id) {
+        threadLinkedViews.forEach(v => {
+            if (v !== this) v.onHover(id);
+        });
+    }
+
+    function onThreadClick(id) {
+        detailData = featureData.threads.find(t => t.threadId === id).messages;
+        redrawView(detailContainer, detailVis, detailData, true);
+
+        // Also clear the message view
+        messageData = [];
+        redrawView(messageContainer, messageVis, messageData);
+
+        // And clear the selecion of thread messages
+        detailVis.selectedMessage(null);
     }
 });

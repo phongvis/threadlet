@@ -21,7 +21,8 @@ pv.vis.featureProjection = function() {
      */
     let threadId = d => d.threadId,
         dimX = d => d.dim1,
-        dimY = d => d.dim2;
+        dimY = d => d.dim2,
+        tooltip = d => d.tooltip;
 
     /**
      * Data binding to DOM elements.
@@ -47,7 +48,7 @@ pv.vis.featureProjection = function() {
         xAxis = d3.axisBottom(xScale),
         yAxis = d3.axisLeft(yScale),
         brush = d3.brush().on('brush', onBrushed).on('end', onBrushended),
-        listeners = d3.dispatch('click', 'brush');
+        listeners = d3.dispatch('click', 'brush', 'brushend', 'hover');
 
     /**
      * Main entry of the module.
@@ -125,15 +126,25 @@ pv.vis.featureProjection = function() {
             });
         }
 
+        highlightBrushedItems();
+        listeners.call('brush', module, brushedIds);
+    }
+
+    function highlightBrushedItems() {
         threadContainer.selectAll('.thread').classed('brushed', d2 => brushedIds.includes(threadId(d2)));
         threadContainer.selectAll('.thread').filter(d2 => brushedIds.includes(threadId(d2))).raise();
+    }
+
+    function highlightHoveredItem(id) {
+        threadContainer.selectAll('.thread').classed('hovered', d2 => threadId(d2) === id);
+        threadContainer.selectAll('.thread').filter(d2 => threadId(d2) === id).raise();
     }
 
     function onBrushended() {
         onBrushed.call(this);
         brushing = false;
 
-        listeners.call('brush', module, brushedIds);
+        listeners.call('brushend', module, brushedIds);
     }
 
     function enterThreads(selection) {
@@ -142,17 +153,21 @@ pv.vis.featureProjection = function() {
 
         // Circle
         container.append('circle')
-            .attr('r', 3);
+            .attr('r', 4);
+
+        container.append('title')
+            .text(tooltip);
 
         container.on('mouseover', function(d, i) {
             if (brushing) return;
 
-            threadContainer.selectAll('.thread').classed('hovered', d2 => threadId(d2) === threadId(d));
-            threadContainer.selectAll('.thread').filter(d2 => threadId(d2) === threadId(d)).raise();
+            highlightHoveredItem(threadId(d));
+            listeners.call('hover', module, threadId(d));
         }).on('mouseout', function() {
             threadContainer.selectAll('.thread').classed('hovered', false);
+            listeners.call('hover', module, null);
         }).on('click', function(d) {
-            listeners.call('click', this, threadData.find(t => threadId(t) === threadId(d)));
+            listeners.call('click', module, threadId(d));
         });
     }
 
@@ -204,6 +219,19 @@ pv.vis.featureProjection = function() {
     module.invalidate = function() {
         dataChanged = true;
     };
+
+    /**
+     * Handles items that are brushed externally.
+     */
+    module.onBrush = function(ids) {
+        brushedIds = ids;
+        highlightBrushedItems();
+    };
+
+    /**
+     * Handles item that is hovered externally.
+     */
+    module.onHover = highlightHoveredItem;
 
     /**
      * Binds custom events.

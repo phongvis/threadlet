@@ -65,6 +65,12 @@
     stroke-width: 2;
 }
 
+.pv-thread .time.selected {
+    stroke: hsl(31, 100%, 70%);
+    stroke-opacity: 1;
+    stroke-width: 2;
+}
+
 .pv-thread .time .head {
     stroke-width: 2px;
 }
@@ -73,6 +79,11 @@
 .pv-thread .person-background {
     fill: hsl(31, 100%, 93%);
     stroke: none;
+}
+
+.pv-thread .message-background.selected {
+    fill: hsl(31, 100%, 80%);
+    display: block;
 }
 
 .pv-thread .background {
