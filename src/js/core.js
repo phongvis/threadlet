@@ -17,6 +17,16 @@ const pv = function() {
 	}
 
 	/**
+	 * Execute enter-update-exit pipeline to bind data to a container.
+	 */
+	pv.enterUpdateDiv = function(data, container, enter, update, key, classname) {
+        const items = container.selectAll('.' + classname).data(data, key);
+		items.enter().append('div').attr('class', classname).call(enter)
+			.merge(items).call(update);
+        items.exit().transition().style('opacity', 0).remove();
+	}
+
+	/**
 	 * Return [width, height] of the bounding rectangle, excluding padding and border.
 	 */
 	pv.getContentRect = function(element) {

@@ -1,0 +1,46 @@
+.pv-labelling .main-vis {
+    margin: 3px;
+    clear: both;
+}
+
+.pv-labelling .class-label {
+    margin-right: 5px;
+}
+
+.pv-labelling .class-label a {
+    border-radius: 0;
+}
+
+.pv-labelling .class-name {
+    text-decoration: none !important;
+    border-color: transparent;
+}
+
+.pv-labelling .class-name:active {
+    border-color: #4a4a4a;
+}
+
+.pv-labelling .class-edit {
+    font-weight: bold;
+    text-decoration: none !important;
+}
+
+.pv-labelling .class-edit:hover {
+    background-color: #e8e8e8;
+}
+
+.pv-labelling .class-edit:active {
+    background-color: #dbdbdb;
+}
+
+.pv-labelling .class-delete {
+    margin-left: 0 !important;
+}
+
+.pv-labelling .checkbox {
+    margin-top: 3px;
+}
+
+.pv-labelling .new-label {
+    margin-left: 20px;
+}

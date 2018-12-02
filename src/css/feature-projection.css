@@ -1,5 +1,5 @@
 .pv-feature-projection .thread {
-    opacity: 0.5;
+    opacity: 0.75;
 }
 
 .pv-feature-projection .thread.brushed {
@@ -8,6 +8,10 @@
 }
 
 .pv-feature-projection .thread.hovered {
-    fill: red;
+    stroke: red;
     opacity: 1;
+}
+
+.pv-feature-projection .thread path {
+    stroke: white;
 }

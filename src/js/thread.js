@@ -20,8 +20,6 @@ pv.vis.thread = function() {
         visTitle = 'Thread Messages',
         messageWidth,
         sortGroupsMethod = 'time', // time/engagement
-        timeGrouping = false,
-        longConnector = true,
         hoveredMessageIdx,
         selectedMessage;
 
@@ -396,30 +394,6 @@ pv.vis.thread = function() {
             sortGroups(personData);
             update();
         });
-
-        // Not used
-        // <div class='setting long-connector'>
-        //     <label>
-        //         <input type='checkbox' name='long-connector'> Long Connector
-        //     </label>
-        // </div>
-        // <div class='setting time-grouping'>
-        //     <label>
-        //         <input type='checkbox' name='time-grouping'> Time Grouping
-        //     </label>
-        // </div>
-
-        // container.select('input[name=time-grouping]').node().checked = timeGrouping;
-        // container.select('input[name=time-grouping]').on('change', function() {
-        //     timeGrouping = this.checked;
-        //     update();
-        // });
-
-        // container.select('input[name=long-connector]').node().checked = longConnector;
-        // container.select('input[name=long-connector]').on('change', function() {
-        //     longConnector = this.checked;
-        //     update();
-        // });
     }
 
     function updateSelectionHandle() {
@@ -541,7 +515,6 @@ pv.vis.thread = function() {
 
         container.append('path').attr('class', 'head');
         container.append('path').attr('class', 'main');
-        container.append('path').attr('class', 'connector');
         container.append('path').attr('class', 'tail');
     }
 
@@ -566,14 +539,10 @@ pv.vis.thread = function() {
                 .attr('d', getLine([[d.tx, d.ty], [d.tx, d.ty + headHeight]]));
 
             container.select('.main')
-                .attr('d', getCurve([[d.tx, d.ty + headHeight], timeGrouping ? [d.cx, d.y - 15] : [d.x, d.y - headHeight]]));
-
-            container.select('.connector')
-                .classed('hidden', !timeGrouping)
-                .attr('d', getCurve([[d.cx, d.y - 15], [d.x, d.y - headHeight]]));
+                .attr('d', getCurve([[d.tx, d.ty + headHeight], [d.x, d.y - headHeight]]));
 
             container.select('.tail')
-                .attr('d', getLine([[d.x, d.y - headHeight], [d.x, longConnector ? firstInstanceY + headHeight : d.y]]));
+                .attr('d', getLine([[d.x, d.y - headHeight], [d.x, firstInstanceY + headHeight]]));
         });
     }
 

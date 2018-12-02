@@ -222,7 +222,7 @@ pv.vis.threadall = function() {
 
         // Circle
         container.append('circle')
-            .attr('r', 4);
+            .attr('r', 3);
 
         container.append('title')
             .text(tooltip);

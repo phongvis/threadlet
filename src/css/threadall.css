@@ -1,7 +1,7 @@
 .pv-threadall .feature .label {
-    fill: black;
     text-anchor: middle;
     dominant-baseline: text-before-edge;
+    font-weight: bold;
 }
 
 .pv-threadall .thread {

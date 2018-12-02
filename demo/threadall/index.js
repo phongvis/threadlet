@@ -1,4 +1,13 @@
 document.addEventListener('DOMContentLoaded', async function() {
+    const serverUrl = 'http://127.0.0.1:5000/',
+        classColorScale = d3.scaleOrdinal(d3.schemeSet2);
+
+    // Labelling
+    const labellingContainer = d3.select('.threadlet-labelling'),
+        labellingVis = pv.vis.labelling()
+            .colorScale(classColorScale)
+            .on('update', onUpdateLabels);
+
     // Thread Features
     const featureContainer = d3.select('.threadlet-features'),
         featureVis = pv.vis.threadall();
@@ -6,7 +15,8 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     // Feature Projection
     const projectionContainer = d3.select('.threadlet-projection'),
-    projectionVis = pv.vis.featureProjection();
+    projectionVis = pv.vis.featureProjection()
+        .colorScale(classColorScale);
     let projectionData = [];
 
     // Thread Overview
@@ -79,6 +89,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         overviewData = featureData.threads.slice(0, 3);
         detailData = featureData.threads[0].messages;
         messageData = detailData.slice(0, 1);
+        labellingVis.allIds(featureData.threads.map(d => d.threadId));
 
         // Build the vises
         update();
@@ -95,6 +106,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         redrawView(overviewContainer, overviewVis, overviewData);
         redrawView(detailContainer, detailVis, detailData);
         redrawView(messageContainer, messageVis, messageData);
+        labellingContainer.call(labellingVis);
     }
 
     function redrawView(container, vis, data, invalidated) {
@@ -152,5 +164,21 @@ document.addEventListener('DOMContentLoaded', async function() {
 
         // And clear the selecion of thread messages
         detailVis.selectedMessage(null);
+    }
+
+    function onUpdateLabels(d) {
+        // Ask the modelling to build or update model
+        const url = `${serverUrl}model?data=${JSON.stringify(d.threads)}&rec=${d.recommend}`;
+        $.ajax(url).done(r => {
+            r = JSON.parse(r);
+
+            console.log('Here is the response from the server');
+            console.log(r);
+
+            // Update thread projection view
+            projectionVis.classLookup(r.classLookup)
+                .highlightedThreadIds(r.samples);
+            redrawView(projectionContainer, projectionVis, projectionData);
+        });
     }
 });

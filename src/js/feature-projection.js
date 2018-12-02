@@ -9,12 +9,21 @@ pv.vis.featureProjection = function() {
     /**
      * Visual configs.
      */
-    const margin = { top: 25, right: 10, bottom: 20, left: 20 };
+    const margin = { top: 27, right: 10, bottom: 20, left: 20 },
+        circleRadius = 4,
+        projectedRadius = circleRadius * Math.sqrt(2) / 2,
+        points1 = [[-projectedRadius, projectedRadius], [projectedRadius, -projectedRadius]],
+        points2 = [[-projectedRadius, -projectedRadius], [projectedRadius, projectedRadius]],
+        texture = textures.lines()
+            .size(2)
+            .strokeWidth(1);
 
     let visWidth = 960, visHeight = 600, // Size of the visualization, including margins
         width, height, // Size of the main content, excluding margins
         visTitle = 'Feature Projection',
-        brushing = false;
+        brushing = false,
+        classLookup = {},
+        highlightedThreadIds = [];
 
     /**
      * Accessors.
@@ -43,10 +52,12 @@ pv.vis.featureProjection = function() {
     /**
      * D3.
      */
+    let colorScale;
     const xScale = d3.scaleLinear(),
         yScale = d3.scaleLinear(),
         xAxis = d3.axisBottom(xScale),
         yAxis = d3.axisLeft(yScale),
+        line = d3.line(),
         brush = d3.brush().on('brush', onBrushed).on('end', onBrushended),
         listeners = d3.dispatch('click', 'brush', 'brushend', 'hover');
 
@@ -66,6 +77,9 @@ pv.vis.featureProjection = function() {
 
                 threadData = _data;
 
+                container.call(texture);
+
+                // addPatternDefinition(container);
                 addSettings(container);
 
                 this.visInitialized = true;
@@ -153,7 +167,11 @@ pv.vis.featureProjection = function() {
 
         // Circle
         container.append('circle')
-            .attr('r', 4);
+            .attr('r', circleRadius);
+
+        // Cross lines for recommended samples
+        container.append('path')
+            .attr('d', line(points1) + line(points2));
 
         container.append('title')
             .text(tooltip);
@@ -176,7 +194,25 @@ pv.vis.featureProjection = function() {
             const container = d3.select(this);
 
             container.attr('transform', 'translate(' + d.x + ',' + d.y + ')');
+
+            container.select('circle')
+                .style('fill', fillCircle);
+
+            container.select('path')
+                .classed('hidden', !highlightedThreadIds.includes(threadId(d)));
+
+            // Highlighted threads are more important, bring them to front
+            if (highlightedThreadIds.includes(threadId(d))) {
+                container.raise();
+            }
         });
+    }
+
+    function fillCircle(d) {
+        // classLookup[threadId(d)] !== undefined ? colorScale(classLookup[threadId(d)]) : 'black'
+        const color = classLookup[threadId(d)] !== undefined ? colorScale(classLookup[threadId(d)]) : 'black';
+        return color;
+        // return texture.url();
     }
 
     function layoutThreads(data, f) {
@@ -184,6 +220,18 @@ pv.vis.featureProjection = function() {
             d.x = xScale(dimX(d));
             d.y = yScale(dimY(d));
         });
+    }
+
+    function addPatternDefinition(container) {
+        container.append('defs').append('pattern')
+            .attr('id', 'diagonal-stripe')
+            .attr('patternUnits', 'userSpaceOnUse')
+            .attr('width', 4)
+            .attr('height', 4)
+            .append('image')
+                .attr('width', 4)
+                .attr('height', 4)
+                .attr('xlink:href', 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScxMCcgaGVpZ2h0PScxMCc+CiAgPHJlY3Qgd2lkdGg9JzEwJyBoZWlnaHQ9JzEwJyBmaWxsPSd3aGl0ZScvPgogIDxwYXRoIGQ9J00tMSwxIGwyLC0yCiAgICAgICAgICAgTTAsMTAgbDEwLC0xMAogICAgICAgICAgIE05LDExIGwyLC0yJyBzdHJva2U9J2JsYWNrJyBzdHJva2Utd2lkdGg9JzEnLz4KPC9zdmc+Cg==');
     }
 
     function addSettings(container) {
@@ -210,6 +258,33 @@ pv.vis.featureProjection = function() {
     module.height = function(value) {
         if (!arguments.length) return visHeight;
         visHeight = value;
+        return this;
+    };
+
+    /**
+     * Sets/gets the color scale of the visualization.
+     */
+    module.colorScale = function(value) {
+        if (!arguments.length) return colorScale;
+        colorScale = value;
+        return this;
+    };
+
+    /**
+     * Sets/gets the class lookup of the visualization.
+     */
+    module.classLookup = function(value) {
+        if (!arguments.length) return classLookup;
+        classLookup = value;
+        return this;
+    };
+
+    /**
+     * Sets/gets the threads that are highlighted.
+     */
+    module.highlightedThreadIds = function(value) {
+        if (!arguments.length) return highlightedThreadIds;
+        highlightedThreadIds = value;
         return this;
     };
 
