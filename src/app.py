@@ -13,6 +13,7 @@ if not all_threads:
     with open(filename, 'r') as f:
         all_threads = json.load(f)
 
+# model endpoint
 @app.route("/model")
 def model():
     # Modelling
@@ -49,3 +50,8 @@ def get_dummy_recommended_samples():
     "Randomly return 50 thread IDs."
     all_thread_ids = [t['threadId'] for t in all_threads]
     return np.random.permutation(all_thread_ids)[:50].tolist()
+
+# save endpoint
+@app.route("/save")
+def save():
+    return ''

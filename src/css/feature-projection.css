@@ -3,7 +3,7 @@
 }
 
 .pv-feature-projection .thread.brushed {
-    fill: orange;
+    stroke: orange;
     opacity: 1;
 }
 

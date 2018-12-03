@@ -14,10 +14,9 @@ pv.vis.labelling = function() {
     /**
      * Data.
      */
-    let labelData = [ { id: 0, label: 'Class 1' }, { id: 1, label: 'Class 2' } ],
-        incrementalId = labelData.length,
-        allIds,
-        classLookup = {}; // threadId -> classId
+    let labelData = [],
+        incrementalId = 0,
+        allIds;
 
     /**
      * DOM.
@@ -29,7 +28,7 @@ pv.vis.labelling = function() {
      * D3.
      */
     let colorScale;
-    const listeners = d3.dispatch('update');
+    const listeners = d3.dispatch('label', 'update', 'testUpdate', 'save', 'delete');
 
     /**
      * Main entry of the module.
@@ -44,10 +43,12 @@ pv.vis.labelling = function() {
                 visContainer = container.append('div').attr('class', 'main-vis all-labels field is-grouped is-grouped-multiline');
 
                 this.visInitialized = true;
+
+                addTestClasses();
             }
 
             update();
-            testUpdateModel();
+            // testUpdateModel();
         });
     }
 
@@ -60,7 +61,10 @@ pv.vis.labelling = function() {
 
     function enterLabels(container) {
         container = container.append('div').attr('class', 'tags has-addons');
-        container.append('a').attr('class', 'class-name tag button is-medium');
+        container.append('a').attr('class', 'class-name tag button is-medium')
+            .on('click', function(d) {
+                listeners.call('label', module, d.id);
+            });
 
         // Edit button
         container.append('a').attr('class', 'class-edit tag is-medium').text('✎')
@@ -76,6 +80,7 @@ pv.vis.labelling = function() {
             .on('click', function(d) {
                 labelData.splice(labelData.indexOf(d), 1);
                 update();
+                listeners.call('delete', module, d.id);
             });
     }
 
@@ -100,6 +105,7 @@ pv.vis.labelling = function() {
                     <button class='setting new-label'>New Class</button>
                     <label class='setting checkbox recommend'><input type='checkbox'> Recommend Samples</label>
                     <button class='setting update-model'>Update Model</button>
+                    <button class='setting save-model'>Save Model</button>
                 </div>
                 <div class='modal'>
                     <div class='modal-background'></div>
@@ -122,6 +128,7 @@ pv.vis.labelling = function() {
         handleRecommendingSamples(container);
         handleNewClass(container);
         handleUpdateModel(container);
+        handleSaveModel(container);
         addTestButton(container);
     }
 
@@ -178,6 +185,15 @@ pv.vis.labelling = function() {
     }
 
     function handleUpdateModel(container) {
+        container.select('.update-model').on('click', function() {
+            listeners.call('update', module, isRecommendingSamples);
+        });
+    }
+
+    function handleSaveModel(container) {
+        container.select('.save-model').on('click', function() {
+            listeners.call('save');
+        });
     }
 
     function addTestButton(container) {
@@ -201,7 +217,12 @@ pv.vis.labelling = function() {
         }));
 
         update();
-        listeners.call('update', module, { threads: labelledThreads, recommend: isRecommendingSamples });
+        listeners.call('testUpdate', module, { threads: labelledThreads, recommend: isRecommendingSamples });
+    }
+
+    function addTestClasses() {
+        labelData.push({ id: 0, label: 'Class 0' }, { id: 1, label: 'Class 1' });
+        incrementalId = labelData.length;
     }
 
     /**

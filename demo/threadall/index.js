@@ -2,11 +2,19 @@ document.addEventListener('DOMContentLoaded', async function() {
     const serverUrl = 'http://127.0.0.1:5000/',
         classColorScale = d3.scaleOrdinal(d3.schemeSet2);
 
+    let brushingThreadIds = [],
+        globalClassLookup = {}, // The class lookup of the entire dataset
+        activeClassLookup = {}; // The result of manual labelling, will be sent to the modelling
+
     // Labelling
     const labellingContainer = d3.select('.threadlet-labelling'),
         labellingVis = pv.vis.labelling()
             .colorScale(classColorScale)
-            .on('update', onUpdateLabels);
+            .on('label', onLabelThreads)
+            .on('update', onUpdateLabels)
+            .on('save', onSaveModel)
+            .on('testUpdate', onTestUpdateLabels)
+            .on('delete', onDeleteClass);
 
     // Thread Features
     const featureContainer = d3.select('.threadlet-features'),
@@ -16,6 +24,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     // Feature Projection
     const projectionContainer = d3.select('.threadlet-projection'),
     projectionVis = pv.vis.featureProjection()
+        .classLookup(globalClassLookup)
         .colorScale(classColorScale);
     let projectionData = [];
 
@@ -55,7 +64,10 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     registerThreadLinkedViews();
 
-    d3.json('../../data/threads-100_revV2.json').then(data => {
+    processModelFile(await d3.json('../../data/threadlet-model.json'));
+    processDataFile(await d3.json('../../data/threads-100_revV2.json'));
+
+    function processDataFile(data) {
         featureData = {
             features: [
                 { name: 'Engagement', label: 'Engagement' },
@@ -93,9 +105,15 @@ document.addEventListener('DOMContentLoaded', async function() {
 
         // Build the vises
         update();
+    }
 
-        // testRestAPI('http://127.0.0.1:5000/?params=');
-    });
+    function processModelFile(data) {
+        globalClassLookup = data.globalClassLookup;
+        activeClassLookup = data.activeClassLookup;
+
+        projectionVis.classLookup(globalClassLookup)
+            .highlightedThreadIds(data.recommendedSamples);
+    }
 
     /**
      * Updates vises when window changed.
@@ -116,14 +134,6 @@ document.addEventListener('DOMContentLoaded', async function() {
         container.datum(data).call(vis);
     }
 
-    function testRestAPI(url) {
-        const s = featureData.threads.slice(0, 10).map(d => d.threadId).join(',');
-        $.ajax(url + s)
-            .done(r => {
-                console.log(r);
-            });
-    }
-
     function getProjectionData(data) {
         return data.map(d => ({ threadId: d.threadId, dim1: d.tSNEX, dim2: d.tSNEY, tooltip: d.tooltip }));
     }
@@ -134,9 +144,9 @@ document.addEventListener('DOMContentLoaded', async function() {
             .on('brushend', onThreadsBrushend)
             .on('hover', onThreadHover)
             .on('click', onThreadClick);
-    });
-
+        });
     }
+
     function onThreadsBrush(ids) {
         threadLinkedViews.forEach(v => {
             if (v !== this) v.onBrush(ids);
@@ -144,6 +154,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
 
     function onThreadsBrushend(ids) {
+        brushingThreadIds = ids;
         overviewData = featureData.threads.filter(t => ids.includes(t.threadId));
         redrawView(overviewContainer, overviewVis, overviewData, true);
     }
@@ -166,19 +177,81 @@ document.addEventListener('DOMContentLoaded', async function() {
         detailVis.selectedMessage(null);
     }
 
-    function onUpdateLabels(d) {
+    function onLabelThreads(classId) {
+        // Assign brushing threads to the given classId
+        brushingThreadIds.forEach(id => {
+            globalClassLookup[id] = activeClassLookup[id] = classId;
+        });
+
+        // Update views
+        redrawView(projectionContainer, projectionVis, projectionData);
+    }
+
+    function onUpdateLabels(recommend) {
+        const labelledThreads = _.map(activeClassLookup, (v, k) => ({
+            threadId: k,
+            classId: v
+        }));
+
+        if (labelledThreads.length) {
+            updateModels(labelledThreads, recommend);
+        }
+    }
+
+    function updateModels(threads, recommend) {
         // Ask the modelling to build or update model
-        const url = `${serverUrl}model?data=${JSON.stringify(d.threads)}&rec=${d.recommend}`;
+        const url = `${serverUrl}model?data=${JSON.stringify(threads)}&rec=${recommend}`;
         $.ajax(url).done(r => {
             r = JSON.parse(r);
 
             console.log('Here is the response from the server');
             console.log(r);
 
+            // Relabelling with updated classes
+            for (let threadId in r.classLookup) {
+                globalClassLookup[threadId] = r.classLookup[threadId];
+            }
+
             // Update thread projection view
-            projectionVis.classLookup(r.classLookup)
-                .highlightedThreadIds(r.samples);
+            projectionVis.highlightedThreadIds(r.samples);
             redrawView(projectionContainer, projectionVis, projectionData);
         });
+
+        // Reset the active class lookup as all manual labels are sent to the modelling
+        for (let threadId in activeClassLookup) {
+            delete activeClassLookup[threadId];
+        }
+    }
+
+    function onTestUpdateLabels(d) {
+        updateModels(d.threads, d.recommend);
+    }
+
+    function onDeleteClass(classId) {
+        // Clear all threads having this class
+        [activeClassLookup, globalClassLookup].forEach(classLookup => {
+            for (let threadId in classLookup) {
+                if (classLookup[threadId] === classId) {
+                    delete classLookup[threadId];
+                }
+            }
+        });
+
+        // Update thread projection view
+        redrawView(projectionContainer, projectionVis, projectionData);
+    }
+
+    function onSaveModel() {
+        const model = {
+            globalClassLookup: globalClassLookup,
+            activeClassLookup: activeClassLookup,
+            recommendedSamples: projectionVis.highlightedThreadIds()
+        };
+
+        const text = JSON.stringify(model, null, 4);
+        saveAs(new Blob([text]), 'threadlet-model.json');
+
+        // Ask the modelling to save a model as well
+        $.ajax(`${serverUrl}save`);
     }
 });
