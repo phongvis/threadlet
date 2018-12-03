@@ -1,7 +1,9 @@
 document.addEventListener('DOMContentLoaded', async function() {
-    const serverUrl = 'http://127.0.0.1:5000/',
-        classColorScale = d3.scaleOrdinal(d3.schemeSet2);
+    const modelFilePath = '../../data/threadlet-model.json',
+        dataFilePath = '../../data/threads-100_revV2.json',
+        serverUrl = 'http://127.0.0.1:5000/';
 
+    const classColorScale = d3.scaleOrdinal(d3.schemeSet2);
     let brushingThreadIds = [],
         globalClassLookup = {}, // The class lookup of the entire dataset
         activeClassLookup = {}; // The result of manual labelling, will be sent to the modelling
@@ -64,8 +66,8 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     registerThreadLinkedViews();
 
-    processModelFile(await d3.json('../../data/threadlet-model.json'));
-    processDataFile(await d3.json('../../data/threads-100_revV2.json'));
+    processModelFile(await d3.json(modelFilePath));
+    processDataFile(await d3.json(dataFilePath));
 
     function processDataFile(data) {
         featureData = {
