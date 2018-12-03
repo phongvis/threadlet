@@ -409,7 +409,7 @@ pv.vis.thread = function() {
 
         // Highlight message
         hoveredMessageIdx = Math.floor((x + messageWidth / 2) / messageWidth);
-        timeContainer.selectAll('.message-background').classed('hidden', (d, i) => hoveredMessageIdx !== i);
+        timeContainer.selectAll('.message-background').classed('hidden', (d, i) => hoveredMessageIdx !== i && d !== selectedMessage);
         timeContainer.selectAll('.time').classed('hovered', (d, i) => hoveredMessageIdx === i);
 
         listeners.call('hover', this, data[hoveredMessageIdx]);
@@ -420,7 +420,7 @@ pv.vis.thread = function() {
     }
 
     function onSelectionOut() {
-        timeContainer.selectAll('.message-background').classed('hidden', true);
+        timeContainer.selectAll('.message-background').classed('hidden', d => d !== selectedMessage);
         timeContainer.selectAll('.time').classed('hovered', false);
         personBackgroundContainer.selectAll('.person-background').classed('hidden', true);
 
@@ -434,7 +434,6 @@ pv.vis.thread = function() {
             selectedMessage = data[hoveredMessageIdx];
         }
 
-        timeContainer.selectAll('.message-background').classed('selected', d => d === selectedMessage);
         timeContainer.selectAll('.time').classed('selected', d => d === selectedMessage);
 
         listeners.call('click', this, selectedMessage);

@@ -81,7 +81,7 @@
     stroke: none;
 }
 
-.pv-thread .message-background.selected {
+.pv-thread .time.selected .message-background {
     fill: hsl(31, 100%, 80%);
     display: block;
 }
