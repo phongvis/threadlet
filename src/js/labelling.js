@@ -5,7 +5,8 @@ pv.vis.labelling = function() {
     /**
      * Visual configs.
      */
-    let visTitle = 'Labelling',
+    let width, height, // Size of the main content, excluding margins
+        visTitle = 'Labelling',
         modelName = '',
         labellingMode,
         editingClass,
@@ -15,7 +16,7 @@ pv.vis.labelling = function() {
     /**
      * Data.
      */
-    let labelData = [],
+    let labelData,
         incrementalId = 0,
         allIds;
 
@@ -44,9 +45,11 @@ pv.vis.labelling = function() {
                 visContainer = container.append('div').attr('class', 'main-vis all-labels field is-grouped is-grouped-multiline');
 
                 this.visInitialized = true;
-
-                addTestClasses();
             }
+
+            labelData = _data;
+            incrementalId = labelData.length;
+            // addTestClasses();
 
             update();
             // testUpdateModel();
@@ -250,7 +253,7 @@ pv.vis.labelling = function() {
 
     function handleSaveModel() {
         settingContainer.select('.save-model').on('click', function() {
-            listeners.call('save');
+            listeners.call('save', module, labelData);
         });
     }
 
@@ -302,6 +305,24 @@ pv.vis.labelling = function() {
         labelData.push({ id: 0, label: 'Class 0' }, { id: 1, label: 'Class 1' });
         incrementalId = labelData.length;
     }
+
+    /**
+     * Sets/gets the width of the visualization.
+     */
+    module.width = function(value) {
+        if (!arguments.length) return visWidth;
+        visWidth = value;
+        return this;
+    };
+
+    /**
+     * Sets/gets the height of the visualization.
+     */
+    module.height = function(value) {
+        if (!arguments.length) return visHeight;
+        visHeight = value;
+        return this;
+    };
 
     /**
      * Sets/gets the color scale of the visualization.

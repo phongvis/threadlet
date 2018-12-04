@@ -75,8 +75,6 @@ pv.vis.featureProjection = function() {
                 brushContainer = visContainer.append('g').attr('class', 'brush');
                 threadContainer = visContainer.append('g').attr('class', 'threads');
 
-                threadData = _data;
-
                 container.call(texture);
 
                 // addPatternDefinition(container);
@@ -85,6 +83,7 @@ pv.vis.featureProjection = function() {
                 this.visInitialized = true;
             }
 
+            threadData = _data;
             update();
         });
 

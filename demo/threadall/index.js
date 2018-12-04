@@ -21,6 +21,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             .on('load', onLoadModel)
             .on('testUpdate', onTestUpdateLabels)
             .on('delete', onDeleteClass);
+    let labelData = [];
 
     // Thread Features
     const featureContainer = d3.select('.threadlet-features'),
@@ -121,7 +122,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         redrawView(overviewContainer, overviewVis, overviewData);
         redrawView(detailContainer, detailVis, detailData);
         redrawView(messageContainer, messageVis, messageData);
-        labellingContainer.call(labellingVis);
+        redrawView(labellingContainer, labellingVis, labelData);
     }
 
     function redrawView(container, vis, data, invalidated) {
@@ -260,6 +261,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     function onSaveModel() {
         const model = {
+            classes: labellingContainer.datum(),
             globalClassLookup: globalClassLookup,
             activeClassLookup: activeClassLookup,
             recommendedSamples: projectionVis.highlightedThreadIds(),
@@ -275,6 +277,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     function onLoadModel(data) {
         modelName = data.modelName;
+        labelData = data.classes;
 
         // Reassign class
         for (let threadId in data.globalClassLookup) {
@@ -292,6 +295,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         userLabels = data.userLabels;
 
         // Update views
+        labellingContainer.datum(labelData);
         projectionVis.highlightedThreadIds(data.recommendedSamples);
         update();
 
