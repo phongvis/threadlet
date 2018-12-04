@@ -196,7 +196,7 @@ pv.vis.featureProjection = function() {
             container.attr('transform', 'translate(' + d.x + ',' + d.y + ')');
 
             container.select('circle')
-                .style('fill', fillCircle);
+                .style('fill', colorThread);
 
             container.select('path')
                 .classed('hidden', !highlightedThreadIds.includes(threadId(d)));
@@ -208,7 +208,7 @@ pv.vis.featureProjection = function() {
         });
     }
 
-    function fillCircle(d) {
+    function colorThread(d) {
         // classLookup[threadId(d)] !== undefined ? colorScale(classLookup[threadId(d)]) : 'black'
         const color = classLookup[threadId(d)] !== undefined ? colorScale(classLookup[threadId(d)]) : 'black';
         return color;

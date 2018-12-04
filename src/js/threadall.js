@@ -9,7 +9,8 @@ pv.vis.threadall = function() {
     /**
      * Visual configs.
      */
-    const margin = { top: 25, right: 10, bottom: 40, left: 10 };
+    const margin = { top: 25, right: 10, bottom: 40, left: 13 },
+        rugGap = margin.left - 1;
 
     let visWidth = 960, visHeight = 600, // Size of the visualization, including margins
         width, height, // Size of the main content, excluding margins
@@ -96,6 +97,11 @@ pv.vis.threadall = function() {
         if (dataChanged) {
             featureScale.domain(d3.range(featureData.length));
             xScale.domain(d3.extent(threadData, startTime));
+
+            // Adjust domain to leave gap for rug space
+            const gap = Math.abs(rugGap * (xScale.invert(1) - xScale.invert(0)));
+            const domain = xScale.domain();
+            xScale.domain([domain[0] - gap, domain[1]]).nice();
         }
 
         // Axis
@@ -224,6 +230,9 @@ pv.vis.threadall = function() {
         container.append('circle')
             .attr('r', 3);
 
+        // Rug
+        container.append('line').attr('class', 'rug');
+
         container.append('title')
             .text(tooltip);
 
@@ -245,6 +254,11 @@ pv.vis.threadall = function() {
             const container = d3.select(this);
 
             container.attr('transform', 'translate(' + d.x + ',' + d.y + ')');
+
+            // rug: y is already at correct position, readjust x
+            container.select('.rug')
+                .attr('x1', -d.x - margin.left + 1)
+                .attr('x2', -d.x + rugGap - margin.left + 1);
         });
     }
 

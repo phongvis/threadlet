@@ -25,3 +25,14 @@
 .pv-threadall .feature .background.odd {
     fill: hsl(0, 0%, 96%);
 }
+
+.pv-threadall .thread.brushed .rug {
+    stroke: orange;
+    stroke-width: 2;
+    opacity: 1;
+}
+
+.pv-threadall .thread .rug {
+    fill: none;
+    stroke: black;
+}
