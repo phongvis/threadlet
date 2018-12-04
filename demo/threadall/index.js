@@ -4,17 +4,21 @@ document.addEventListener('DOMContentLoaded', async function() {
         serverUrl = 'http://127.0.0.1:5000/';
 
     const classColorScale = d3.scaleOrdinal(d3.schemeSet2);
-    let brushingThreadIds = [],
+    let modelName = '',
+        brushingThreadIds = [],
         globalClassLookup = {}, // The class lookup of the entire dataset
-        activeClassLookup = {}; // The result of manual labelling, will be sent to the modelling
+        activeClassLookup = {}, // The result of manual labelling, will be sent to the modelling
+        userLabels = []; // All thread IDs that are labelled by users
 
     // Labelling
     const labellingContainer = d3.select('.threadlet-labelling'),
         labellingVis = pv.vis.labelling()
             .colorScale(classColorScale)
             .on('label', onLabelThreads)
-            .on('update', onUpdateLabels)
+            .on('new', onNewModel)
+            .on('update', onUpdateModel)
             .on('save', onSaveModel)
+            .on('load', onLoadModel)
             .on('testUpdate', onTestUpdateLabels)
             .on('delete', onDeleteClass);
 
@@ -66,7 +70,6 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     registerThreadLinkedViews();
 
-    processModelFile(await d3.json(modelFilePath));
     processDataFile(await d3.json(dataFilePath));
 
     function processDataFile(data) {
@@ -107,14 +110,6 @@ document.addEventListener('DOMContentLoaded', async function() {
 
         // Build the vises
         update();
-    }
-
-    function processModelFile(data) {
-        globalClassLookup = data.globalClassLookup;
-        activeClassLookup = data.activeClassLookup;
-
-        projectionVis.classLookup(globalClassLookup)
-            .highlightedThreadIds(data.recommendedSamples);
     }
 
     /**
@@ -183,13 +178,33 @@ document.addEventListener('DOMContentLoaded', async function() {
         // Assign brushing threads to the given classId
         brushingThreadIds.forEach(id => {
             globalClassLookup[id] = activeClassLookup[id] = classId;
+
+            if (!userLabels.includes(id)) {
+                userLabels.push(id);
+            }
         });
 
         // Update views
         redrawView(projectionContainer, projectionVis, projectionData);
     }
 
-    function onUpdateLabels(recommend) {
+    function onNewModel(t) {
+        // Reset everything
+        modelName = t;
+        brushingThreadIds = [];
+
+        [activeClassLookup, globalClassLookup].forEach(classLookup => {
+            for (let threadId in classLookup) {
+                delete classLookup[threadId];
+            }
+        });
+
+        projectionVis.highlightedThreadIds([]);
+
+        update();
+    }
+
+    function onUpdateModel(recommend) {
         const labelledThreads = _.map(activeClassLookup, (v, k) => ({
             threadId: k,
             classId: v
@@ -247,13 +262,40 @@ document.addEventListener('DOMContentLoaded', async function() {
         const model = {
             globalClassLookup: globalClassLookup,
             activeClassLookup: activeClassLookup,
-            recommendedSamples: projectionVis.highlightedThreadIds()
+            recommendedSamples: projectionVis.highlightedThreadIds(),
+            userLabels: userLabels
         };
 
         const text = JSON.stringify(model, null, 4);
-        saveAs(new Blob([text]), 'threadlet-model.json');
+        saveAs(new Blob([text]), `${modelName}.json`);
 
         // Ask the modelling to save a model as well
-        $.ajax(`${serverUrl}save`);
+        $.ajax(`${serverUrl}save?name=${modelName}`);
+    }
+
+    function onLoadModel(data) {
+        modelName = data.modelName;
+
+        // Reassign class
+        for (let threadId in data.globalClassLookup) {
+            globalClassLookup[threadId] = data.globalClassLookup[threadId];
+        }
+
+        // For active one, it could be mismatched, so clear first then assign
+        for (let threadId in activeClassLookup) {
+            delete activeClassLookup[threadId];
+        }
+        for (let threadId in data.activeClassLookup) {
+            activeClassLookup[threadId] = data.activeClassLookup[threadId];
+        }
+
+        userLabels = data.userLabels;
+
+        // Update views
+        projectionVis.highlightedThreadIds(data.recommendedSamples);
+        update();
+
+        // Ask the modelling to load a model as well
+        $.ajax(`${serverUrl}load?name=${modelName}`);
     }
 });

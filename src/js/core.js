@@ -36,5 +36,19 @@ const pv = function() {
 		return [rect.width - pad, rect.height - pad];
 	}
 
+	/**
+	 * Read a file.
+	 */
+	pv.readFile = function(e, callback) {
+		const f = e.target.files[0];
+		if (f) {
+			const reader = new FileReader();
+			reader.readAsText(f);
+			reader.onload = function(e) {
+				callback(e.target.result);
+			};
+		}
+	};
+
     return pv;
 }();

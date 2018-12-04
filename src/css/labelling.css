@@ -3,6 +3,10 @@
     clear: both;
 }
 
+.pv-labelling .settings .setting {
+    margin-left: 5px;
+}
+
 .pv-labelling .class-label {
     margin-right: 5px;
 }
@@ -43,4 +47,25 @@
 
 .pv-labelling .new-label {
     margin-left: 20px;
+}
+
+.pv-labelling .model-name {
+    font-size: 1.3em;
+}
+
+.pv-labelling .setting.file-container {
+    background-color: white;
+    margin: 0px 0px 1px 5px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: 1px solid #bbb;
+    cursor: pointer;
+}
+
+.pv-labelling .setting.file-container:active {
+    background-color: #448BFD;
+}
+
+.pv-labelling .setting.file-container input {
+    display: none;
 }

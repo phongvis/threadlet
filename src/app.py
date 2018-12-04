@@ -13,6 +13,8 @@ if not all_threads:
     with open(filename, 'r') as f:
         all_threads = json.load(f)
 
+model_name = '' # Initially, no model is loaded
+
 # model endpoint
 @app.route("/model")
 def model():
@@ -54,4 +56,13 @@ def get_dummy_recommended_samples():
 # save endpoint
 @app.route("/save")
 def save():
+    model_name = request.args.get('name', '') # Use this to save the model
+    print(model_name)
+    return ''
+
+# load endpoint
+@app.route("/load")
+def load():
+    model_name = request.args.get('name', '') # Use this to load the model
+    print(model_name)
     return ''

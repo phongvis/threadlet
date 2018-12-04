@@ -6,6 +6,7 @@ pv.vis.labelling = function() {
      * Visual configs.
      */
     let visTitle = 'Labelling',
+        modelName = '',
         labellingMode,
         editingClass,
         isEdittingClass = false,
@@ -28,7 +29,7 @@ pv.vis.labelling = function() {
      * D3.
      */
     let colorScale;
-    const listeners = d3.dispatch('label', 'update', 'testUpdate', 'save', 'delete');
+    const listeners = d3.dispatch('label', 'new', 'load', 'update', 'testUpdate', 'save', 'delete');
 
     /**
      * Main entry of the module.
@@ -104,69 +105,83 @@ pv.vis.labelling = function() {
                     <label class='setting checkbox edit-mode'><input type='checkbox'> Edit Class</label>
                     <button class='setting new-label'>New Class</button>
                     <label class='setting checkbox recommend'><input type='checkbox'> Recommend Samples</label>
-                    <button class='setting update-model'>Update Model</button>
-                    <button class='setting save-model'>Save Model</button>
-                </div>
-                <div class='modal'>
-                    <div class='modal-background'></div>
-                    <div class='modal-card' style='width: 300px'>
-                        <header class='modal-card-head'>
-                            <p class='modal-card-title'>Enter label name</p>
-                        </header>
-                        <section class='modal-card-body'>
-                            <input class='input is-medium' type='text'>
-                        </section>
-                        <footer class='modal-card-foot'>
-                            <button class='button is-success'>Save changes</button>
-                            <button class='button cancel'>Cancel</button>
-                        </footer>
-                    </div>
+                    <button class='setting update-model'>Update</button>
+                    <button class='setting save-model'>Save</button>
+                    <label class='setting file-container'>
+                        Load
+                        <input type='file' class='load-model'>
+                    </label>
+                    <button class='setting new-model'>New</button>
+                    <label class='setting model-name'>${modelName}</label>
                 </div>
             `);
 
-        handleEditMode(container);
-        handleRecommendingSamples(container);
-        handleNewClass(container);
-        handleUpdateModel(container);
-        handleSaveModel(container);
-        addTestButton(container);
+        handleEditMode();
+        handleRecommendingSamples();
+        handleNewClass();
+        handleNewModel();
+        handleUpdateModel();
+        handleSaveModel();
+        handleLoadModel();
+        handleSaveLoadButtons();
+        addTestButton();
     }
 
-    function handleEditMode(container) {
+    function handleEditMode() {
         // Default value of editting checbox
-        container.select('.edit-mode input').node().checked = isEdittingClass;
-        container.select('.edit-mode input').on('change', function() {
+        settingContainer.select('.edit-mode input').node().checked = isEdittingClass;
+        settingContainer.select('.edit-mode input').on('change', function() {
             isEdittingClass = this.checked;
             update();
         });
     }
 
-    function handleRecommendingSamples(container) {
+    function handleRecommendingSamples() {
         // Default value of recommending checkbox
-        container.select('.recommend input').node().checked = isRecommendingSamples;
-        container.select('.recommend input').on('change', function() {
+        settingContainer.select('.recommend input').node().checked = isRecommendingSamples;
+        settingContainer.select('.recommend input').on('change', function() {
             isRecommendingSamples = this.checked;
             update();
         });
     }
 
-    function handleNewClass(container) {
+    function handleNewClass() {
+        // Add modal dialog
+        const dialog = settingContainer.append('div').attr('class', 'modal new-class')
+            .html(`
+                <div class='modal-background'></div>
+                <div class='modal-card' style='width: 300px'>
+                    <header class='modal-card-head'>
+                        <p class='modal-card-title'>Enter label name</p>
+                    </header>
+                    <section class='modal-card-body'>
+                        <input class='input is-medium' type='text'>
+                    </section>
+                    <footer class='modal-card-foot'>
+                        <button class='button is-success'>Save changes</button>
+                        <button class='button cancel'>Cancel</button>
+                    </footer>
+                </div>
+            `);
+
         // Class manipulation
-        container.select('.new-label')
+        settingContainer.select('.new-label')
             .on('click', function() {
                 labellingMode = 'new';
-                displayModal(true);
-                container.select('.modal input').node().focus();
+                displayModal(dialog, true);
+                dialog.select('input').node().focus();
             });
 
-        container.select('.modal .cancel')
+        // Cancel
+        dialog.select('.cancel')
             .on('click', function() {
-                displayModal(false);
+                displayModal(dialog, false);
             });
 
-        container.select('.modal .is-success')
+        // OK - add new class
+        dialog.select('.is-success')
             .on('click', function() {
-                const label = container.select('.modal .input').node().value;
+                const label = dialog.select('input').node().value;
 
                 if (labellingMode === 'new') {
                     labelData.push({ id: incrementalId++, label: label });
@@ -175,29 +190,92 @@ pv.vis.labelling = function() {
                 }
 
                 update();
-                container.select('.modal .input').node().value = '';
-                displayModal(false);
+                dialog.select('input').node().value = '';
+                displayModal(dialog, false);
             });
     }
 
-    function displayModal(visibility) {
-        settingContainer.select('.modal').classed('is-active', visibility);
+    function displayModal(container, visibility) {
+        container.classed('is-active', visibility);
     }
 
-    function handleUpdateModel(container) {
-        container.select('.update-model').on('click', function() {
+    function handleNewModel() {
+        // Add modal dialog
+        const dialog = settingContainer.append('div').attr('class', 'modal new-model')
+            .html(`
+                <div class='modal-background'></div>
+                <div class='modal-card' style='width: 300px'>
+                    <header class='modal-card-head'>
+                        <p class='modal-card-title'>Enter model name</p>
+                    </header>
+                    <section class='modal-card-body'>
+                        <input class='input is-medium' type='text'>
+                    </section>
+                    <footer class='modal-card-foot'>
+                        <button class='button is-success'>Save changes</button>
+                        <button class='button cancel'>Cancel</button>
+                    </footer>
+                </div>
+            `);
+
+        // Model manipulation
+        settingContainer.select('.new-model')
+            .on('click', function() {
+                displayModal(dialog, true);
+                dialog.select('input').node().focus();
+            });
+
+        // Cancel
+        dialog.select('.cancel')
+            .on('click', function() {
+                displayModal(dialog, false);
+            });
+
+        // OK - create a new model
+        dialog.select('.is-success')
+            .on('click', function() {
+                modelName = dialog.select('input').node().value;
+                dialog.select('input').node().value = '';
+                displayModal(dialog, false);
+                handleSaveLoadButtons();
+                listeners.call('new', module, modelName);
+            });
+    }
+
+    function handleUpdateModel() {
+        settingContainer.select('.update-model').on('click', function() {
             listeners.call('update', module, isRecommendingSamples);
         });
     }
 
-    function handleSaveModel(container) {
-        container.select('.save-model').on('click', function() {
+    function handleSaveModel() {
+        settingContainer.select('.save-model').on('click', function() {
             listeners.call('save');
         });
     }
 
-    function addTestButton(container) {
-        container.select('.vis-header')
+    function handleLoadModel() {
+        settingContainer.select('.load-model').node().addEventListener('change', function(e) {
+            pv.readFile(e, function(text) {
+                modelName = (e.target.files[0]).name.replace('.json', '');
+                handleSaveLoadButtons();
+                const data = JSON.parse(text);
+                data.modelName = modelName;
+                listeners.call('load', module, data);
+            })
+        });
+    }
+
+    function handleSaveLoadButtons() {
+        const disabled = modelName ? null : true;
+        settingContainer.select('.save-model').attr('disabled', disabled).style('cursor', disabled ? 'default' : 'pointer');
+        settingContainer.select('.update-model').attr('disabled', disabled).style('cursor', disabled ? 'default' : 'pointer');
+
+        settingContainer.select('.model-name').text(modelName);
+    }
+
+    function addTestButton() {
+        settingContainer.select('.vis-header')
             .append('button').attr('class', 'setting test')
             .text('Test')
             .on('click', testUpdateModel);
