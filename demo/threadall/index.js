@@ -66,7 +66,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     // Make the vis responsive to window resize
     window.onresize = _.throttle(update, 100);
 
-    const threadLinkedViews = [ featureVis, projectionVis ];
+    const threadLinkedViews = [ featureVis, projectionVis, overviewVis ];
     const timeFormat = d3.timeFormat('%d-%b-%Y');
 
     registerThreadLinkedViews();
@@ -138,16 +138,19 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     function registerThreadLinkedViews() {
         threadLinkedViews.forEach(v => {
-            v.on('brush', onThreadsBrush)
-            .on('brushend', onThreadsBrushend)
-            .on('hover', onThreadHover)
-            .on('click', onThreadClick);
+            if (v === featureVis || v === projectionVis) {
+                v.on('brush', onThreadsBrush)
+                .on('brushend', onThreadsBrushend)
+                .on('click', onThreadClick);
+            }
+
+            v.on('hover', onThreadHover);
         });
     }
 
     function onThreadsBrush(ids) {
         threadLinkedViews.forEach(v => {
-            if (v !== this) v.onBrush(ids);
+            if (v !== this && v.onBrush) v.onBrush(ids);
         });
     }
 
@@ -159,13 +162,19 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     function onThreadHover(id) {
         threadLinkedViews.forEach(v => {
-            if (v !== this) v.onHover(id);
+            if (v !== this && v.onHover) v.onHover(id);
         });
     }
 
     function onThreadClick(id) {
-        detailData = featureData.threads.find(t => t.threadId === id).messages;
+        // Show it on the detail view
+        const thread = featureData.threads.find(t => t.threadId === id);
+        detailData = thread.messages;
         redrawView(detailContainer, detailVis, detailData, true);
+
+        // Show it on the overview
+        overviewData = [thread];
+        redrawView(overviewContainer, overviewVis, overviewData, true);
 
         // Also clear the message view
         messageData = [];
@@ -176,6 +185,8 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
 
     function onLabelThreads(classId) {
+        const threads = projectionVis.highlightedThreadIds();
+
         // Assign brushing threads to the given classId
         brushingThreadIds.forEach(id => {
             globalClassLookup[id] = activeClassLookup[id] = classId;
@@ -183,6 +194,9 @@ document.addEventListener('DOMContentLoaded', async function() {
             if (!userLabels.includes(id)) {
                 userLabels.push(id);
             }
+
+            // Unhighlight
+            threads.splice(threads.indexOf(id), 1);
         });
 
         // Update views
@@ -190,19 +204,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
 
     function onNewModel(t) {
-        // Reset everything
         modelName = t;
-        brushingThreadIds = [];
-
-        [activeClassLookup, globalClassLookup].forEach(classLookup => {
-            for (let threadId in classLookup) {
-                delete classLookup[threadId];
-            }
-        });
-
-        projectionVis.highlightedThreadIds([]);
-
-        update();
     }
 
     function onUpdateModel(recommend) {
@@ -293,6 +295,9 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
 
         userLabels = data.userLabels;
+
+        console.log(globalClassLookup, activeClassLookup);
+
 
         // Update views
         labellingContainer.datum(labelData);

@@ -18,6 +18,11 @@
     opacity: 1;
 }
 
+.pv-threadall .thread.selected {
+    fill: red;
+    opacity: 1;
+}
+
 .pv-threadall .feature .background {
     fill: none;
 }

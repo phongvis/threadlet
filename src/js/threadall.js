@@ -245,6 +245,8 @@ pv.vis.threadall = function() {
             featureContainer.selectAll('.thread').classed('hovered', false);
             listeners.call('hover', module, null);
         }).on('click', function(d) {
+            // featureContainer.selectAll('.thread').classed('selected', d2 => d.id === d2.id);
+
             listeners.call('click', this, d.id);
         });
     }

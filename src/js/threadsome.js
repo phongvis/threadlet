@@ -55,7 +55,7 @@ pv.vis.threadsome = function() {
     /**
      * D3.
      */
-    const listeners = d3.dispatch('click'),
+    const listeners = d3.dispatch('click', 'hover'),
         xAbsoluteScale = d3.scaleUtc(),
         xRelativeScale = d3.scaleBand().paddingInner(0.1),
         xAxis = d3.axisTop().scale(xAbsoluteScale).ticks(5),
@@ -282,6 +282,8 @@ pv.vis.threadsome = function() {
         threadContainer.selectAll('.thread-background').classed('active', (d, i) => hoveredThreadIdx === i);
         threadContainer.selectAll('.time').classed('hovered', (d, i) => hoveredThreadIdx === i);
 
+        listeners.call('hover', module, threadId(data[hoveredThreadIdx]));
+
         // Highlight person
         const personIdx = Math.floor(y / personHeight);
         personBackgroundContainer.selectAll('.person-background').classed('hidden', (d, i) => personIdx !== i);
@@ -291,6 +293,8 @@ pv.vis.threadsome = function() {
         threadContainer.selectAll('.thread-background').classed('active', false);
         threadContainer.selectAll('.time').classed('hovered', false);
         personBackgroundContainer.selectAll('.person-background').classed('hidden', true);
+
+        listeners.call('hover', module, null);
     }
 
     function onSelectionClick() {
@@ -476,6 +480,14 @@ pv.vis.threadsome = function() {
         if (!arguments.length) return visHeight;
         visHeight = value;
         return this;
+    };
+
+    /**
+     * Handles item that is hovered externally.
+     */
+    module.onHover = function(id) {
+        threadContainer.selectAll('.thread-background').classed('active', d => threadId(d) === id);
+        threadContainer.selectAll('.time').classed('hovered', d => threadId(d) === id);
     };
 
     /**
