@@ -30,7 +30,7 @@
 
 .pv-thread .person .instance.bcc {
     stroke: hsl(0, 0%, 60%);
-    stroke-dasharray: 2,1;
+    fill: white;
 }
 
 .pv-thread .person.group .instance.bcc {
@@ -83,7 +83,6 @@
 
 .pv-thread .time.selected .message-background {
     fill: hsl(31, 100%, 80%);
-    display: block;
 }
 
 .pv-thread .background {

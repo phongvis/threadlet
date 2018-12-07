@@ -128,7 +128,7 @@ pv.vis.thread = function() {
 
             lineData = buildLineData(personData);
 
-            xAbsoluteScale.domain(d3.extent(data, time));
+            xAbsoluteScale.domain(d3.extent(data, time)).nice();
             xRelativeScale.domain([0, data.length - 1]);
         }
 
@@ -142,6 +142,7 @@ pv.vis.thread = function() {
          * Draw.
          */
         if (data.length) axisContainer.call(xAxis);
+        axisContainer.classed('hidden', !data.length);
 
         const personBackgrounds = personBackgroundContainer.selectAll('.person-background').data(personData, personId);
         personBackgrounds.enter().append('rect').attr('class', 'person-background hidden')
@@ -412,7 +413,7 @@ pv.vis.thread = function() {
         timeContainer.selectAll('.message-background').classed('hidden', (d, i) => hoveredMessageIdx !== i && d !== selectedMessage);
         timeContainer.selectAll('.time').classed('hovered', (d, i) => hoveredMessageIdx === i);
 
-        listeners.call('hover', this, data[hoveredMessageIdx]);
+        listeners.call('hover', module, data[hoveredMessageIdx]);
 
         // Highlight person
         const personIdx = Math.floor(y / personHeight);
@@ -424,19 +425,14 @@ pv.vis.thread = function() {
         timeContainer.selectAll('.time').classed('hovered', false);
         personBackgroundContainer.selectAll('.person-background').classed('hidden', true);
 
-        listeners.call('hover', this, null);
+        listeners.call('hover', module, null);
     }
 
     function onSelectionClick() {
-        if (data[hoveredMessageIdx] === selectedMessage) {
-            selectedMessage = null; // click again to deselect
-        } else {
-            selectedMessage = data[hoveredMessageIdx];
-        }
-
+        selectedMessage = data[hoveredMessageIdx] === selectedMessage ? null : data[hoveredMessageIdx]; // click again to deselect
         timeContainer.selectAll('.time').classed('selected', d => d === selectedMessage);
 
-        listeners.call('click', this, selectedMessage);
+        listeners.call('click', module, selectedMessage);
     }
 
     function enterPersons(selection) {

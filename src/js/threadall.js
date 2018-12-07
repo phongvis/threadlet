@@ -16,7 +16,8 @@ pv.vis.threadall = function() {
         width, height, // Size of the main content, excluding margins
         visTitle = 'Thread Features',
         maxBarWidth,
-        brushing = false;
+        brushing = false,
+        selectedThreadId;
 
     /**
      * Accessors.
@@ -245,9 +246,11 @@ pv.vis.threadall = function() {
             featureContainer.selectAll('.thread').classed('hovered', false);
             listeners.call('hover', module, null);
         }).on('click', function(d) {
-            // featureContainer.selectAll('.thread').classed('selected', d2 => d.id === d2.id);
+            selectedThreadId = selectedThreadId === d.id ? null : d.id; // click again to deselect
+            featureContainer.selectAll('.thread').classed('selected', d2 => d2.id === selectedThreadId);
+            featureContainer.selectAll('.thread').filter(d2 => d2 => d2.id === selectedThreadId).raise();
 
-            listeners.call('click', this, d.id);
+            listeners.call('click', module, selectedThreadId);
         });
     }
 
@@ -324,6 +327,15 @@ pv.vis.threadall = function() {
      * Handles item that is hovered externally.
      */
     module.onHover = highlightHoveredItem;
+
+    /**
+     * Handles item that is clicked externally.
+     */
+    module.onClick = function(id) {
+        selectedThreadId = id;
+        featureContainer.selectAll('.thread').classed('selected', d2 => d2.id === selectedThreadId);
+        featureContainer.selectAll('.thread').filter(d2 => d2 => d2.id === selectedThreadId).raise();
+    };
 
     /**
      * Binds custom events.

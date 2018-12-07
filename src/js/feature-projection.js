@@ -23,7 +23,8 @@ pv.vis.featureProjection = function() {
         visTitle = 'Feature Projection',
         brushing = false,
         classLookup = {},
-        highlightedThreadIds = [];
+        highlightedThreadIds = [],
+        selectedThread;
 
     /**
      * Accessors.
@@ -184,7 +185,11 @@ pv.vis.featureProjection = function() {
             threadContainer.selectAll('.thread').classed('hovered', false);
             listeners.call('hover', module, null);
         }).on('click', function(d) {
-            listeners.call('click', module, threadId(d));
+            selectedThread = selectedThread === d ? null : d; // click again to deselect
+            threadContainer.selectAll('.thread').classed('selected', d2 => d2 === selectedThread);
+            threadContainer.selectAll('.thread').filter(d2 => d2 === selectedThread).raise();
+
+            listeners.call('click', module, selectedThread ? threadId(selectedThread) : null);
         });
     }
 
@@ -306,6 +311,15 @@ pv.vis.featureProjection = function() {
      * Handles item that is hovered externally.
      */
     module.onHover = highlightHoveredItem;
+
+    /**
+     * Handles item that is clicked externally.
+     */
+    module.onClick = function(id) {
+        selectedThread = threadData.find(d => threadId(d) === id);
+        threadContainer.selectAll('.thread').classed('selected', d2 => d2 === selectedThread);
+        threadContainer.selectAll('.thread').filter(d2 => d2 === selectedThread).raise();
+    };
 
     /**
      * Binds custom events.

@@ -1,15 +1,25 @@
 .pv-feature-projection .thread {
-    opacity: 0.5;
+    fill-opacity: 0.25;
+    stroke-opacity: 0.25;
 }
 
 .pv-feature-projection .thread.brushed {
-    stroke: orange;
-    opacity: 1;
+    stroke: hsl(31, 100%, 75%);
+    stroke-opacity: 1;
+    stroke-width: 2px;
 }
 
 .pv-feature-projection .thread.hovered {
-    stroke: red;
+    stroke: hsl(31, 100%, 60%);
     opacity: 1;
+}
+
+.pv-feature-projection .thread.selected {
+    opacity: 1;
+}
+
+.pv-feature-projection .thread.selected circle {
+    fill: hsl(31, 100%, 50%) !important;
 }
 
 .pv-feature-projection .thread path {

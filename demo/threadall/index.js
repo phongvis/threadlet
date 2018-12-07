@@ -37,11 +37,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     // Thread Overview
     const overviewContainer = d3.select('.threadlet-some'),
-        overviewVis = pv.vis.threadsome()
-            .on('click', function(d) {
-                detailData = d.messages;
-                redrawView(detailContainer, detailVis, detailData, true);
-            });
+        overviewVis = pv.vis.threadsome();
     let overviewData = [];
 
     // Thread Messages
@@ -141,10 +137,10 @@ document.addEventListener('DOMContentLoaded', async function() {
             if (v === featureVis || v === projectionVis) {
                 v.on('brush', onThreadsBrush)
                 .on('brushend', onThreadsBrushend)
-                .on('click', onThreadClick);
             }
 
-            v.on('hover', onThreadHover);
+            v.on('hover', onThreadHover)
+            .on('click', onThreadClick);
         });
     }
 
@@ -167,14 +163,21 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
 
     function onThreadClick(id) {
+        // Visual effect
+        threadLinkedViews.forEach(v => {
+            if (v !== this && v.onClick) v.onClick(id);
+        });
+
         // Show it on the detail view
         const thread = featureData.threads.find(t => t.threadId === id);
-        detailData = thread.messages;
+        detailData = thread ? thread.messages : [];
         redrawView(detailContainer, detailVis, detailData, true);
 
         // Show it on the overview
-        overviewData = [thread];
-        redrawView(overviewContainer, overviewVis, overviewData, true);
+        if (this !== overviewVis) {
+            overviewData = thread ? [thread] : [];
+            redrawView(overviewContainer, overviewVis, overviewData, true);
+        }
 
         // Also clear the message view
         messageData = [];
@@ -219,6 +222,9 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
 
     function updateModels(threads, recommend) {
+        console.log(threads);
+
+
         // Ask the modelling to build or update model
         const url = `${serverUrl}model?data=${JSON.stringify(threads)}&rec=${recommend}`;
         $.ajax(url).done(r => {

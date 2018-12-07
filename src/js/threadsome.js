@@ -19,7 +19,8 @@ pv.vis.threadsome = function() {
     let visWidth = 960, visHeight = 600, // Size of the visualization, including margins
         width, height, // Size of the main content, excluding margins
         visTitle = 'Thread Overview',
-        hoveredThreadIdx;
+        hoveredThreadIdx,
+        selectedThread;
 
     /**
      * Accessors.
@@ -123,7 +124,7 @@ pv.vis.threadsome = function() {
             personData = groupPersons(persons);
 
             if (data.length) {
-                xAbsoluteScale.domain(d3.extent(_.flatten(data.map(t => [startTime(t), endTime(t)]))));
+                xAbsoluteScale.domain(d3.extent(_.flatten(data.map(t => [startTime(t), endTime(t)])))).nice();
                 xRelativeScale.domain(_.range(data.length));
             }
 
@@ -282,7 +283,7 @@ pv.vis.threadsome = function() {
         threadContainer.selectAll('.thread-background').classed('active', (d, i) => hoveredThreadIdx === i);
         threadContainer.selectAll('.time').classed('hovered', (d, i) => hoveredThreadIdx === i);
 
-        listeners.call('hover', module, threadId(data[hoveredThreadIdx]));
+        listeners.call('hover', module, hoveredThreadIdx === -1 ? null : threadId(data[hoveredThreadIdx]));
 
         // Highlight person
         const personIdx = Math.floor(y / personHeight);
@@ -298,7 +299,10 @@ pv.vis.threadsome = function() {
     }
 
     function onSelectionClick() {
-        listeners.call('click', this, data[hoveredThreadIdx]);
+        selectedThread = data[hoveredThreadIdx] === selectedThread ? null : data[hoveredThreadIdx]; // click again to deselect
+        threadContainer.selectAll('.time').classed('selected', d => d === selectedThread);
+        threadContainer.selectAll('.thread-background').classed('selected', d => d === selectedThread);
+        listeners.call('click', module, selectedThread ? threadId(selectedThread) : null);
     }
 
     function enterPersons(selection) {

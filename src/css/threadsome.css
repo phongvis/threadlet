@@ -33,9 +33,15 @@
 }
 
 .pv-threadsome .time.hovered {
-    stroke: #ffcc99;
+    stroke: hsl(31, 100%, 85%);
     stroke-opacity: 1;
     stroke-width: 2px;
+}
+
+.pv-threadsome .time.selected {
+    stroke: hsl(31, 100%, 70%);
+    stroke-opacity: 1;
+    stroke-width: 2;
 }
 
 .pv-threadsome .thread .time .head {
@@ -60,4 +66,8 @@
 
 .pv-threadsome .thread-background.active {
     fill: hsl(31, 100%, 93%);
+}
+
+.pv-threadsome .thread-background.selected {
+    fill: hsl(31, 100%, 80%);
 }
