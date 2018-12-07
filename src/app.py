@@ -3,6 +3,7 @@ from flask_cors import CORS
 
 import json
 import numpy as np
+import logging
 
 app = Flask(__name__)
 CORS(app)
@@ -15,14 +16,20 @@ if not all_threads:
 
 model_name = '' # Initially, no model is loaded
 
+
+
 # model endpoint
 @app.route("/model")
 def model():
     # Modelling
     data = request.args.get('data', '')
     labelled_threads = json.loads(data) # This is a list of dictionary { threadId, classId }
-    labelled_all_threads = build_dummy_model(labelled_threads) # To be replaced by proper active learning modelling
-
+    app.logger.info('testing info log')
+    app.logger.info('-----------------')
+    app.logger.info(labelled_threads)
+    predicted_all_threads = build_dummy_model(labelled_threads) # To be replaced by proper active learning modelling
+    app.logger.info('----------------- Predicted --------------')
+    app.logger.info(predicted_all_threads)
     # Getting recommendations
     recommend = request.args.get('rec', '') == 'true'
     recommended_samples = [] # Return empty list if no recommendation required
@@ -31,7 +38,7 @@ def model():
 
     # Prepare returning object (note that there are some `tolist()` to make object JSON serialisable)
     return_object = {
-        'classLookup': labelled_all_threads,
+        'classLookup': predicted_all_threads,
         'samples': recommended_samples
     }
 
