@@ -3,7 +3,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         dataFilePath = '../../data/threads-100_revV2.json',
         serverUrl = 'http://127.0.0.1:5000/';
 
-    const classColorScale = d3.scaleOrdinal(d3.schemeSet2);
+    const classColorScale = d3.scaleOrdinal(['#66c2a5', '#8da0cb', '#e78ac3', '#a6d854', '#ffd92f', '#e5c494']);
     let modelName = '',
         brushingThreadIds = [],
         globalClassLookup = {}, // The class lookup of the entire dataset
@@ -25,14 +25,16 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     // Thread Features
     const featureContainer = d3.select('.threadlet-features'),
-        featureVis = pv.vis.threadall();
+        featureVis = pv.vis.threadall()
+            .classLookup(globalClassLookup)
+            .colorScale(classColorScale);
     let featureData = [];
 
     // Feature Projection
     const projectionContainer = d3.select('.threadlet-projection'),
-    projectionVis = pv.vis.featureProjection()
-        .classLookup(globalClassLookup)
-        .colorScale(classColorScale);
+        projectionVis = pv.vis.featureProjection()
+            .classLookup(globalClassLookup)
+            .colorScale(classColorScale);
     let projectionData = [];
 
     // Thread Overview
@@ -188,6 +190,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
 
     function onLabelThreads(classId) {
+        // Just need to change in one view because views share the same array.
         const threads = projectionVis.highlightedThreadIds();
 
         // Assign brushing threads to the given classId
@@ -199,11 +202,15 @@ document.addEventListener('DOMContentLoaded', async function() {
             }
 
             // Unhighlight
-            threads.splice(threads.indexOf(id), 1);
+            const idx = threads.indexOf(id);
+            if (idx !== -1) {
+                threads.splice(threads.indexOf(id), 1);
+            }
         });
 
         // Update views
         redrawView(projectionContainer, projectionVis, projectionData);
+        redrawView(featureContainer, featureVis, featureData);
     }
 
     function onNewModel(t) {
@@ -240,7 +247,9 @@ document.addEventListener('DOMContentLoaded', async function() {
 
             // Update thread projection view
             projectionVis.highlightedThreadIds(r.samples);
+            featureVis.highlightedThreadIds(r.samples);
             redrawView(projectionContainer, projectionVis, projectionData);
+            redrawView(featureContainer, featureVis, featureData);
         });
 
         // Reset the active class lookup as all manual labels are sent to the modelling
@@ -263,8 +272,9 @@ document.addEventListener('DOMContentLoaded', async function() {
             }
         });
 
-        // Update thread projection view
+        // Update views
         redrawView(projectionContainer, projectionVis, projectionData);
+        redrawView(featureContainer, featureVis, featureData);
     }
 
     function onSaveModel() {
@@ -308,6 +318,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         // Update views
         labellingContainer.datum(labelData);
         projectionVis.highlightedThreadIds(data.recommendedSamples);
+        featureVis.highlightedThreadIds(data.recommendedSamples);
         update();
 
         // Ask the modelling to load a model as well

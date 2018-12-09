@@ -283,7 +283,7 @@ pv.vis.threadsome = function() {
         threadContainer.selectAll('.thread-background').classed('active', (d, i) => hoveredThreadIdx === i);
         threadContainer.selectAll('.time').classed('hovered', (d, i) => hoveredThreadIdx === i);
 
-        listeners.call('hover', module, hoveredThreadIdx === -1 ? null : threadId(data[hoveredThreadIdx]));
+        listeners.call('hover', module, (hoveredThreadIdx === -1 || hoveredThreadIdx > data.length - 1) ? null : threadId(data[hoveredThreadIdx]));
 
         // Highlight person
         const personIdx = Math.floor(y / personHeight);

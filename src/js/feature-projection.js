@@ -13,10 +13,7 @@ pv.vis.featureProjection = function() {
         circleRadius = 4,
         projectedRadius = circleRadius * Math.sqrt(2) / 2,
         points1 = [[-projectedRadius, projectedRadius], [projectedRadius, -projectedRadius]],
-        points2 = [[-projectedRadius, -projectedRadius], [projectedRadius, projectedRadius]],
-        texture = textures.lines()
-            .size(2)
-            .strokeWidth(1);
+        points2 = [[-projectedRadius, -projectedRadius], [projectedRadius, projectedRadius]];
 
     let visWidth = 960, visHeight = 600, // Size of the visualization, including margins
         width, height, // Size of the main content, excluding margins
@@ -76,9 +73,6 @@ pv.vis.featureProjection = function() {
                 brushContainer = visContainer.append('g').attr('class', 'brush');
                 threadContainer = visContainer.append('g').attr('class', 'threads');
 
-                container.call(texture);
-
-                // addPatternDefinition(container);
                 addSettings(container);
 
                 this.visInitialized = true;
@@ -187,6 +181,7 @@ pv.vis.featureProjection = function() {
         }).on('click', function(d) {
             selectedThread = selectedThread === d ? null : d; // click again to deselect
             threadContainer.selectAll('.thread').classed('selected', d2 => d2 === selectedThread);
+            threadContainer.selectAll('.thread circle').attr('r', d2 => d2 === selectedThread ? circleRadius + 1 : circleRadius);
             threadContainer.selectAll('.thread').filter(d2 => d2 === selectedThread).raise();
 
             listeners.call('click', module, selectedThread ? threadId(selectedThread) : null);
@@ -213,10 +208,7 @@ pv.vis.featureProjection = function() {
     }
 
     function colorThread(d) {
-        // classLookup[threadId(d)] !== undefined ? colorScale(classLookup[threadId(d)]) : 'black'
-        const color = classLookup[threadId(d)] !== undefined ? colorScale(classLookup[threadId(d)]) : 'black';
-        return color;
-        // return texture.url();
+        return classLookup[threadId(d)] !== undefined ? colorScale(classLookup[threadId(d)]) : 'black';
     }
 
     function layoutThreads(data, f) {
@@ -224,18 +216,6 @@ pv.vis.featureProjection = function() {
             d.x = xScale(dimX(d));
             d.y = yScale(dimY(d));
         });
-    }
-
-    function addPatternDefinition(container) {
-        container.append('defs').append('pattern')
-            .attr('id', 'diagonal-stripe')
-            .attr('patternUnits', 'userSpaceOnUse')
-            .attr('width', 4)
-            .attr('height', 4)
-            .append('image')
-                .attr('width', 4)
-                .attr('height', 4)
-                .attr('xlink:href', 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScxMCcgaGVpZ2h0PScxMCc+CiAgPHJlY3Qgd2lkdGg9JzEwJyBoZWlnaHQ9JzEwJyBmaWxsPSd3aGl0ZScvPgogIDxwYXRoIGQ9J00tMSwxIGwyLC0yCiAgICAgICAgICAgTTAsMTAgbDEwLC0xMAogICAgICAgICAgIE05LDExIGwyLC0yJyBzdHJva2U9J2JsYWNrJyBzdHJva2Utd2lkdGg9JzEnLz4KPC9zdmc+Cg==');
     }
 
     function addSettings(container) {

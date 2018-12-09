@@ -10,13 +10,19 @@ pv.vis.threadall = function() {
      * Visual configs.
      */
     const margin = { top: 25, right: 10, bottom: 40, left: 13 },
-        rugGap = margin.left - 1;
+        rugGap = margin.left - 1,
+        circleRadius = 3,
+        projectedRadius = circleRadius * Math.sqrt(2) / 2,
+        points1 = [[-projectedRadius, projectedRadius], [projectedRadius, -projectedRadius]],
+        points2 = [[-projectedRadius, -projectedRadius], [projectedRadius, projectedRadius]];
 
     let visWidth = 960, visHeight = 600, // Size of the visualization, including margins
         width, height, // Size of the main content, excluding margins
         visTitle = 'Thread Features',
         maxBarWidth,
         brushing = false,
+        classLookup = {},
+        highlightedThreadIds = [],
         selectedThreadId;
 
     /**
@@ -46,10 +52,12 @@ pv.vis.threadall = function() {
     /**
      * D3.
      */
+    let colorScale;
     const listeners = d3.dispatch('click', 'brush', 'brushend', 'hover'),
         featureScale = d3.scaleBand().paddingInner(0.1),
         xScale = d3.scaleUtc(),
-        xAxis = d3.axisBottom(xScale);
+        xAxis = d3.axisBottom(xScale),
+        line = d3.line();
 
     /**
      * Main entry of the module.
@@ -140,10 +148,10 @@ pv.vis.threadall = function() {
     function onBrushstarted(d) {
         brushing = true;
 
-        // // Only keep the active brush, so kill others
-        // featureContainer.selectAll('.brush').filter(d2 => d2 !== d).each(function(d2) {
-        //     d2.brush.move(d3.select(this), null);
-        // });
+        // Hide other brushes
+        featureContainer.selectAll('.brush').each(function(d2) {
+            d3.select(this).select('.selection').style('stroke-opacity', d2 === d ? 1 : 0);
+        });
     }
 
     function onBrushed(d) {
@@ -229,7 +237,11 @@ pv.vis.threadall = function() {
 
         // Circle
         container.append('circle')
-            .attr('r', 3);
+            .attr('r', circleRadius);
+
+        // Cross lines for recommended samples
+        container.append('path')
+            .attr('d', line(points1) + line(points2));
 
         // Rug
         container.append('line').attr('class', 'rug');
@@ -260,11 +272,25 @@ pv.vis.threadall = function() {
 
             container.attr('transform', 'translate(' + d.x + ',' + d.y + ')');
 
+            container.select('circle')
+                .style('fill', colorThread);
+            container.select('path')
+                .classed('hidden', !highlightedThreadIds.includes(d.id));
+
+            // Highlighted threads are more important, bring them to front
+            if (highlightedThreadIds.includes(d.id)) {
+                container.raise();
+            }
+
             // rug: y is already at correct position, readjust x
             container.select('.rug')
                 .attr('x1', -d.x - margin.left + 1)
                 .attr('x2', -d.x + rugGap - margin.left + 1);
         });
+    }
+
+    function colorThread(d) {
+        return classLookup[d.id] !== undefined ? colorScale(classLookup[d.id]) : 'black';
     }
 
     function layoutFeatures() {
@@ -305,6 +331,33 @@ pv.vis.threadall = function() {
     module.height = function(value) {
         if (!arguments.length) return visHeight;
         visHeight = value;
+        return this;
+    };
+
+    /**
+     * Sets/gets the color scale of the visualization.
+     */
+    module.colorScale = function(value) {
+        if (!arguments.length) return colorScale;
+        colorScale = value;
+        return this;
+    };
+
+    /**
+     * Sets/gets the class lookup of the visualization.
+     */
+    module.classLookup = function(value) {
+        if (!arguments.length) return classLookup;
+        classLookup = value;
+        return this;
+    };
+
+    /**
+     * Sets/gets the threads that are highlighted.
+     */
+    module.highlightedThreadIds = function(value) {
+        if (!arguments.length) return highlightedThreadIds;
+        highlightedThreadIds = value;
         return this;
     };
 

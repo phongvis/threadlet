@@ -5,22 +5,36 @@
 }
 
 .pv-threadall .thread {
-    opacity: 0.2;
+    fill-opacity: 0.25;
+    stroke-opacity: 0.25;
+    stroke: black;
 }
 
 .pv-threadall .thread.brushed {
-    fill: hsl(31, 100%, 75%);
-    opacity: 1;
+    stroke-opacity: 1;
+    stroke: hsl(30, 100%, 50%);
 }
 
 .pv-threadall .thread.hovered {
-    fill: hsl(31, 100%, 65%);
-    opacity: 1;
+    stroke-opacity: 1;
+    stroke: hsl(30, 100%, 50%);
+    stroke-width: 2px;
 }
 
 .pv-threadall .thread.selected {
-    fill: hsl(31, 100%, 50%);
-    opacity: 1;
+    stroke-opacity: 1;
+    stroke: hsl(30, 100%, 50%);
+    stroke-width: 3px;
+}
+
+.pv-threadall .thread .rug {
+    fill: none;
+    stroke: black;
+}
+
+.pv-threadall .thread.brushed .rug {
+    stroke-opacity: 1;
+    stroke: hsl(30, 100%, 50%);
 }
 
 .pv-threadall .feature .background {
@@ -29,14 +43,4 @@
 
 .pv-threadall .feature .background.odd {
     fill: hsl(0, 0%, 96%);
-}
-
-.pv-threadall .thread.brushed .rug {
-    stroke: orange;
-    stroke-width: 2;
-}
-
-.pv-threadall .thread .rug {
-    fill: none;
-    stroke: black;
 }

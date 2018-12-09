@@ -60,13 +60,13 @@
 }
 
 .pv-thread .time.hovered {
-    stroke: hsl(31, 100%, 85%);
+    stroke: hsl(30, 100%, 85%);
     stroke-opacity: 1;
     stroke-width: 2;
 }
 
 .pv-thread .time.selected {
-    stroke: hsl(31, 100%, 70%);
+    stroke: hsl(30, 100%, 70%);
     stroke-opacity: 1;
     stroke-width: 2;
 }
@@ -77,12 +77,12 @@
 
 .pv-thread .message-background,
 .pv-thread .person-background {
-    fill: hsl(31, 100%, 93%);
+    fill: hsl(30, 100%, 93%);
     stroke: none;
 }
 
 .pv-thread .time.selected .message-background {
-    fill: hsl(31, 100%, 80%);
+    fill: hsl(30, 100%, 80%);
 }
 
 .pv-thread .background {

@@ -83,9 +83,9 @@ button {
 /* --- D3 --- */
 /* Brush */
 .brush .selection {
-    fill-opacity: 0.2;
-    fill: orange;
+    fill: none;
     stroke: orange;
+    cursor: default;
 }
 
 .brush .overlay {
