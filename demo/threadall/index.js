@@ -241,7 +241,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 
 
         // Ask the modelling to build or update model
-        const url = `${serverUrl}model?data=${JSON.stringify(threads)}&rec=${recommend}`;
+        const url = `${serverUrl}model?data=${JSON.stringify(threads)}&rec=${recommend}&name=${modelName}`;
         $.ajax(url).done(r => {
             r = JSON.parse(r);
 
