@@ -1,11 +1,14 @@
 import sys
 import json
 import mysql.connector
-num_threads = int(sys.argv[1]) # The number of longest threads (in terms of number of messages) to retrieve
+
+# Retrieve top long messages from [start, end)
+start = int(sys.argv[1])
+end = int(sys.argv[2])
 
 data = json.load(open('../data/enronThread2001.json'))
 data.sort(key=lambda x: -len(x['messages']))
-data = data[:num_threads]
+data = data[start:end]
 
 # There's a problem with email of recipients. There are some emails as nan. Replace them with text.
 for t in data:
@@ -31,5 +34,5 @@ for i, t in enumerate(data):
         m['body'] = find_message_body(m['sender'], m['time'])
 
 # Export
-with open('../data/threads-{}.json'.format(num_threads), 'w') as f:
+with open('../data/threads-{}-{}.json'.format(start, end), 'w') as f:
     json.dump(data, f)
