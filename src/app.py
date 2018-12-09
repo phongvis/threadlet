@@ -19,6 +19,8 @@ if not all_threads:
 
 model_name = '' # Initially, no model is loaded
 
+model_folder_path = "models/"
+
 ######################
 ### for convenience embed the modelling here for now
 
@@ -109,13 +111,13 @@ def identifyItemsTolabel(lp_model, numberOfSamples, indecesOfUnLabelledIDs):
 
     return list(uncertainty_index)
 
-def performThreadModelling(newThreadLabelObjects):
+def performThreadModelling(model_name, newThreadLabelObjects):
 
     # first some file names
-    model_name = "LP"
-    pkl_model_filename = "pickle_model_" + model_name + ".pkl"
-    cumulative_threadIDs_file = "cumulativeThreadIDs.npy"
-    cumulative_threadlabels_file = "cumulativeThreadLabels.npy"
+    #model_name = "LP"
+    pkl_model_filename = model_folder_path + "pickle_model_" + model_name + ".pkl"
+    cumulative_threadIDs_file = model_folder_path + model_name + "_cumulativeThreadIDs.npy"
+    cumulative_threadlabels_file = model_folder_path + model_name + "_cumulativeThreadLabels.npy"
 
      # first load the json data
     threadObjects = pd.read_json(filename)
@@ -197,7 +199,11 @@ def model():
     labelled_threads = json.loads(data) # This is a list of dictionary { threadId, classId }
     #app.logger.info(labelled_threads)
     #predicted_all_threads = build_dummy_model(labelled_threads) # To be replaced by proper active learning modelling
-    predicted_all_threads, recommended_samples = performThreadModelling(labelled_threads)  # To be replaced by proper active learning modelling
+    model_name = request.args.get('name', '')  # Use this to load the model
+    app.logger.info('----------------- Model_NAME --------------')
+    app.logger.info(model_name)
+    app.logger.info('%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%')
+    predicted_all_threads, recommended_samples = performThreadModelling(model_name, labelled_threads)  # To be replaced by proper active learning modelling
     app.logger.info('----------------- Predicted --------------')
     app.logger.info(predicted_all_threads)
     app.logger.info('%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%')
