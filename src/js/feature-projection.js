@@ -273,6 +273,13 @@ pv.vis.featureProjection = function() {
     };
 
     /**
+     * Gets the selected thread.
+     */
+    module.selectedThread = function() {
+        return selectedThread;
+    };
+
+    /**
      * Sets the flag indicating data input has been changed.
      */
     module.invalidate = function() {

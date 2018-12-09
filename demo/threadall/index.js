@@ -190,11 +190,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
 
     function onLabelThreads(classId) {
-        // Just need to change in one view because views share the same array.
-        const threads = projectionVis.highlightedThreadIds();
-
-        // Assign brushing threads to the given classId
-        brushingThreadIds.forEach(id => {
+        function labelOneThread(id) {
             globalClassLookup[id] = activeClassLookup[id] = classId;
 
             if (!userLabels.includes(id)) {
@@ -206,7 +202,19 @@ document.addEventListener('DOMContentLoaded', async function() {
             if (idx !== -1) {
                 threads.splice(threads.indexOf(id), 1);
             }
-        });
+        }
+
+        const selectedThread = projectionVis.selectedThread();
+
+        // Just need to change in one view because views share the same array.
+        const threads = projectionVis.highlightedThreadIds();
+
+        if (selectedThread) {
+            labelOneThread(selectedThread.threadId);
+        } else {
+            // Assign brushing threads to the given classId
+            brushingThreadIds.forEach(labelOneThread);
+        }
 
         // Update views
         redrawView(projectionContainer, projectionVis, projectionData);
