@@ -149,9 +149,10 @@ pv.vis.threadall = function() {
         brushing = true;
 
         // Hide other brushes
-        featureContainer.selectAll('.brush').each(function(d2) {
-            d3.select(this).select('.selection').style('stroke-opacity', d2 === d ? 1 : 0);
-        });
+        // Very weird: styling make it not draggable
+        // featureContainer.selectAll('.brush').each(function(d2) {
+        //     d3.select(this).select('.selection').style('stroke-opacity', d2 === d ? 1 : 0);
+        // });
     }
 
     function onBrushed(d) {

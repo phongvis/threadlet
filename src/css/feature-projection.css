@@ -1,7 +1,11 @@
 .pv-feature-projection .thread {
-    fill-opacity: 0.25;
-    stroke-opacity: 0.25;
-    stroke: black;
+    fill-opacity: 0.35;
+    stroke-opacity: 0;
+}
+
+.pv-feature-projection .thread path {
+    stroke: hsl(0, 0%, 70%);
+    stroke-opacity: 1;
 }
 
 .pv-feature-projection .thread.brushed {
@@ -9,10 +13,15 @@
     stroke: hsl(30, 100%, 50%);
 }
 
-.pv-feature-projection .thread.hovered {
+.pv-feature-projection .thread.hovered,
+.pv-feature-projection .thread.hovered path {
     stroke-opacity: 1;
     stroke: hsl(30, 100%, 50%);
     stroke-width: 2px;
+}
+
+.pv-feature-projection .thread.hovered path {
+    stroke-width: 1px;
 }
 
 .pv-feature-projection .thread.selected {
@@ -22,5 +31,6 @@
 }
 
 .pv-feature-projection .thread.selected path {
+    stroke: hsl(30, 100%, 50%);
     stroke-width: 2px;
 }

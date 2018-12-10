@@ -5,9 +5,8 @@
 }
 
 .pv-threadall .thread {
-    fill-opacity: 0.25;
-    stroke-opacity: 0.25;
-    stroke: black;
+    fill-opacity: 0.35;
+    stroke-opacity: 0;
 }
 
 .pv-threadall .thread.brushed {
@@ -15,10 +14,15 @@
     stroke: hsl(30, 100%, 50%);
 }
 
-.pv-threadall .thread.hovered {
+.pv-threadall .thread.hovered,
+.pv-threadall .thread.hovered path {
     stroke-opacity: 1;
     stroke: hsl(30, 100%, 50%);
     stroke-width: 2px;
+}
+
+.pv-threadall .thread.hovered path {
+    stroke-width: 1px;
 }
 
 .pv-threadall .thread.selected {
@@ -27,14 +31,20 @@
     stroke-width: 3px;
 }
 
+.pv-threadall .thread.selected path {
+    stroke: hsl(30, 100%, 50%);
+    stroke-width: 2px;
+}
+
 .pv-threadall .thread .rug {
     fill: none;
     stroke: black;
+    stroke-opacity: 0.25;
 }
 
 .pv-threadall .thread.brushed .rug {
-    stroke-opacity: 1;
     stroke: hsl(30, 100%, 50%);
+    stroke-opacity: 1;
 }
 
 .pv-threadall .feature .background {

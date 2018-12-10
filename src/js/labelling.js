@@ -74,9 +74,9 @@ pv.vis.labelling = function() {
         container.append('a').attr('class', 'class-edit tag is-medium').text('✎')
             .on('click', function(d) {
                 editingClass = d;
-                settingContainer.select('.modal .input').node().value = d.label;
-                displayModal(true);
-                settingContainer.select('.modal .input').node().focus();
+                displayModal(settingContainer.select('.new-class'), true);
+                settingContainer.select('.new-class .input').node().value = d.label;
+                settingContainer.select('.new-class .input').node().focus();
             });
 
         // Delete button
