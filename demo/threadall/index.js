@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', async function() {
     const modelFilePath = '../../data/threadlet-model.json',
-        dataFilePath = '../../data/threads-100_revV2.json',
+        dataFilePath = '../../data/threads-100-200_revV2.json',
         serverUrl = 'http://127.0.0.1:5000/';
 
     const classColorScale = d3.scaleOrdinal(['#66c2a5', '#8da0cb', '#e78ac3', '#a6d854', '#ffd92f', '#e5c494']);

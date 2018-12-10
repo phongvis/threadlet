@@ -11,7 +11,7 @@ import logging
 app = Flask(__name__)
 CORS(app)
 
-filename = 'data/threads-100_revV2.json'
+filename = 'data/threads-100-200_revV2.json'
 all_threads = None # Store all threads from the local data file
 if not all_threads:
     with open(filename, 'r') as f:
@@ -36,7 +36,7 @@ from sklearn.metrics import classification_report, confusion_matrix
 # Number of items to label at each iteration of the AL pipeline
 numberOfItemsToLabel = 10
 
-inputFilenameForAllThreads = 'threads-100_revV2.json'
+#inputFilenameForAllThreads = 'threads-100_revV2.json'
 # this is the array/list that keeps track of all the manually labelled observations and their labels
 # this file is saved across runs and loaded back in
 

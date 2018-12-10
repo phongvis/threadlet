@@ -182,7 +182,7 @@ def updateThreadObjectsWithtSNEEmbeddingCoordinates(threadObjectDF, proxyValues)
 
 def main():
     # Load the email data objects
-    inputFileName = "threads-100"
+    inputFileName = "threads-100-200"
     fileExtension = ".json"
     print(inputFileName + fileExtension)
     threadObjects = pd.read_json(inputFileName + fileExtension)
