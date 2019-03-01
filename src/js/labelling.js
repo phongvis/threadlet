@@ -1,7 +1,7 @@
 /**
  * An interface to perform labelling.
  */
-pv.vis.labelling = function() {
+pv.vis.labelling = function () {
     /**
      * Visual configs.
      */
@@ -36,7 +36,7 @@ pv.vis.labelling = function() {
      * Main entry of the module.
      */
     function module(selection) {
-        selection.each(function(_data) {
+        selection.each(function (_data) {
             // Initialize
             if (!this.visInitialized) {
                 const container = d3.select(this).append('div').attr('class', 'pv-labelling');
@@ -66,13 +66,13 @@ pv.vis.labelling = function() {
     function enterLabels(container) {
         container = container.append('div').attr('class', 'tags has-addons');
         container.append('a').attr('class', 'class-name tag button is-medium')
-            .on('click', function(d) {
+            .on('click', function (d) {
                 listeners.call('label', module, d.id);
             });
 
         // Edit button
         container.append('a').attr('class', 'class-edit tag is-medium').text('✎')
-            .on('click', function(d) {
+            .on('click', function (d) {
                 editingClass = d;
                 displayModal(settingContainer.select('.new-class'), true);
                 settingContainer.select('.new-class .input').node().value = d.label;
@@ -81,7 +81,7 @@ pv.vis.labelling = function() {
 
         // Delete button
         container.append('a').attr('class', 'class-delete tag is-delete is-medium')
-            .on('click', function(d) {
+            .on('click', function (d) {
                 labelData.splice(labelData.indexOf(d), 1);
                 update();
                 listeners.call('delete', module, d.id);
@@ -89,7 +89,7 @@ pv.vis.labelling = function() {
     }
 
     function updateLabels(selection) {
-        selection.each(function(d) {
+        selection.each(function (d) {
             const container = d3.select(this);
             container.select('.class-name')
                 .style('background-color', colorScale(d.id))
@@ -127,13 +127,13 @@ pv.vis.labelling = function() {
         handleSaveModel();
         handleLoadModel();
         handleSaveLoadButtons();
-        addTestButton();
+        // addTestButton();
     }
 
     function handleEditMode() {
         // Default value of editting checbox
         settingContainer.select('.edit-mode input').node().checked = isEdittingClass;
-        settingContainer.select('.edit-mode input').on('change', function() {
+        settingContainer.select('.edit-mode input').on('change', function () {
             isEdittingClass = this.checked;
             update();
         });
@@ -142,7 +142,7 @@ pv.vis.labelling = function() {
     function handleRecommendingSamples() {
         // Default value of recommending checkbox
         settingContainer.select('.recommend input').node().checked = isRecommendingSamples;
-        settingContainer.select('.recommend input').on('change', function() {
+        settingContainer.select('.recommend input').on('change', function () {
             isRecommendingSamples = this.checked;
             update();
         });
@@ -169,7 +169,7 @@ pv.vis.labelling = function() {
 
         // Class manipulation
         settingContainer.select('.new-label')
-            .on('click', function() {
+            .on('click', function () {
                 labellingMode = 'new';
                 displayModal(dialog, true);
                 dialog.select('input').node().focus();
@@ -177,13 +177,13 @@ pv.vis.labelling = function() {
 
         // Cancel
         dialog.select('.cancel')
-            .on('click', function() {
+            .on('click', function () {
                 displayModal(dialog, false);
             });
 
         // OK - add new class
         dialog.select('.is-success')
-            .on('click', function() {
+            .on('click', function () {
                 const label = dialog.select('input').node().value;
 
                 if (labellingMode === 'new') {
@@ -223,20 +223,20 @@ pv.vis.labelling = function() {
 
         // Model manipulation
         settingContainer.select('.new-model')
-            .on('click', function() {
+            .on('click', function () {
                 displayModal(dialog, true);
                 dialog.select('input').node().focus();
             });
 
         // Cancel
         dialog.select('.cancel')
-            .on('click', function() {
+            .on('click', function () {
                 displayModal(dialog, false);
             });
 
         // OK - create a new model
         dialog.select('.is-success')
-            .on('click', function() {
+            .on('click', function () {
                 modelName = dialog.select('input').node().value;
                 dialog.select('input').node().value = '';
                 displayModal(dialog, false);
@@ -246,20 +246,20 @@ pv.vis.labelling = function() {
     }
 
     function handleUpdateModel() {
-        settingContainer.select('.update-model').on('click', function() {
+        settingContainer.select('.update-model').on('click', function () {
             listeners.call('update', module, isRecommendingSamples);
         });
     }
 
     function handleSaveModel() {
-        settingContainer.select('.save-model').on('click', function() {
+        settingContainer.select('.save-model').on('click', function () {
             listeners.call('save', module, labelData);
         });
     }
 
     function handleLoadModel() {
-        settingContainer.select('.load-model').node().addEventListener('change', function(e) {
-            pv.readFile(e, function(text) {
+        settingContainer.select('.load-model').node().addEventListener('change', function (e) {
+            pv.readFile(e, function (text) {
                 modelName = (e.target.files[0]).name.replace('.json', '');
                 handleSaveLoadButtons();
                 const data = JSON.parse(text);
@@ -309,7 +309,7 @@ pv.vis.labelling = function() {
     /**
      * Sets/gets the width of the visualization.
      */
-    module.width = function(value) {
+    module.width = function (value) {
         if (!arguments.length) return visWidth;
         visWidth = value;
         return this;
@@ -318,7 +318,7 @@ pv.vis.labelling = function() {
     /**
      * Sets/gets the height of the visualization.
      */
-    module.height = function(value) {
+    module.height = function (value) {
         if (!arguments.length) return visHeight;
         visHeight = value;
         return this;
@@ -327,7 +327,7 @@ pv.vis.labelling = function() {
     /**
      * Sets/gets the color scale of the visualization.
      */
-    module.colorScale = function(value) {
+    module.colorScale = function (value) {
         if (!arguments.length) return colorScale;
         colorScale = value;
         return this;
@@ -336,7 +336,7 @@ pv.vis.labelling = function() {
     /**
      * Sets all the thread Ids, probably only for testing.
      */
-    module.allIds = function(value) {
+    module.allIds = function (value) {
         allIds = value;
         return this;
     }
@@ -344,7 +344,7 @@ pv.vis.labelling = function() {
     /**
      * Binds custom events.
      */
-    module.on = function() {
+    module.on = function () {
         const value = listeners.on.apply(listeners, arguments);
         return value === listeners ? module : value;
     };

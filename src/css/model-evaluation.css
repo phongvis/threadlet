@@ -1,0 +1,52 @@
+.pv-model-evaluation .main-vis {
+    margin-top: 5px;
+}
+
+.pv-model-evaluation .class-label {
+    display: inline-block;
+    width: 100px;
+}
+
+.pv-model-evaluation .threads {
+    font-family: 'Courier New', Courier, monospace;
+    position: absolute;
+    top: 60px;
+    overflow: auto;
+    height: calc(100% - 65px);
+}
+
+.pv-model-evaluation .thread {
+    height: 25px;
+    padding-top: 5px;
+}
+
+.pv-model-evaluation .thread.odd {
+    background-color: hsl(0, 0%, 90%);
+}
+
+.pv-model-evaluation .thread .id {
+    display: inline-block;
+    padding-left: 3px;
+}
+
+.pv-model-evaluation .thread .id.completed {
+    color: hsl(0, 0%, 75%);
+}
+
+.pv-model-evaluation .thread .id:hover {
+    color: black;
+    font-weight: bold;
+}
+
+.pv-model-evaluation .thread .id.selected {
+    color: red;
+    font-weight: bold;
+}
+
+.pv-model-evaluation .thread input {
+    width: 100px;
+}
+
+.pv-model-evaluation .info {
+    padding-top: 2px;
+}

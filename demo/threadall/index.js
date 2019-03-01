@@ -1,6 +1,7 @@
-document.addEventListener('DOMContentLoaded', async function() {
-    const modelFilePath = '../../data/threadlet-model.json',
-        dataFilePath = '../../data/threads-100-200_revV2.json',
+document.addEventListener('DOMContentLoaded', async function () {
+    let test = false;
+
+    const dataFilePath = '../../data/threads-100-200_revV2.json',
         serverUrl = 'http://127.0.0.1:5000/';
 
     const classColorScale = d3.scaleOrdinal(['#66c2a5', '#8da0cb', '#e78ac3', '#a6d854', '#ffd92f', '#e5c494']);
@@ -45,12 +46,12 @@ document.addEventListener('DOMContentLoaded', async function() {
     // Thread Messages
     const detailContainer = d3.select('.threadlet-detail'),
         detailVis = pv.vis.thread()
-            .on('hover', function(d) {
+            .on('hover', function (d) {
                 if (!detailVis.selectedMessage()) {
                     messageData = [d];
                     redrawView(messageContainer, messageVis, messageData);
                 }
-            }).on('click', function(d) {
+            }).on('click', function (d) {
                 messageData = [d];
                 redrawView(messageContainer, messageVis, messageData);
             });
@@ -64,7 +65,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     // Make the vis responsive to window resize
     window.onresize = _.throttle(update, 100);
 
-    const threadLinkedViews = [ featureVis, projectionVis, overviewVis ];
+    const threadLinkedViews = [featureVis, projectionVis, overviewVis];
     const timeFormat = d3.timeFormat('%d-%b-%Y');
 
     registerThreadLinkedViews();
@@ -102,9 +103,9 @@ document.addEventListener('DOMContentLoaded', async function() {
         });
 
         projectionData = getProjectionData(featureData.threads);
-        overviewData = featureData.threads.slice(0, 3);
-        detailData = featureData.threads[0].messages;
-        messageData = detailData.slice(0, 1);
+        overviewData = test ? featureData.threads.slice(0, 3) : [];
+        detailData = test ? featureData.threads[0].messages : [];
+        messageData = test ? detailData.slice(0, 1) : [];
         labellingVis.allIds(featureData.threads.map(d => d.threadId));
 
         // Build the vises
@@ -138,11 +139,11 @@ document.addEventListener('DOMContentLoaded', async function() {
         threadLinkedViews.forEach(v => {
             if (v === featureVis || v === projectionVis) {
                 v.on('brush', onThreadsBrush)
-                .on('brushend', onThreadsBrushend)
+                    .on('brushend', onThreadsBrushend)
             }
 
             v.on('hover', onThreadHover)
-            .on('click', onThreadClick);
+                .on('click', onThreadClick);
         });
     }
 
