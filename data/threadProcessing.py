@@ -182,7 +182,7 @@ def updateThreadObjectsWithtSNEEmbeddingCoordinates(threadObjectDF, proxyValues)
 
 def main():
     # Load the email data objects
-    inputFileName = "threads-100-200"
+    inputFileName = "threads-300-set2"
     fileExtension = ".json"
     print(inputFileName + fileExtension)
     threadObjects = pd.read_json(inputFileName + fileExtension)
@@ -199,7 +199,7 @@ def main():
     print(threadObjects.head())
     print("----------------------")
     print(threadObjectsRevised.head())
-    threadObjectsRevised.to_json(inputFileName + "_revV2" + fileExtension, orient='records')
+    threadObjectsRevised.to_json(inputFileName + "_features" + fileExtension, orient='records')
 
 if __name__ == "__main__":
     main()
