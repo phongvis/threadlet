@@ -11,7 +11,7 @@ import logging
 app = Flask(__name__)
 CORS(app)
 
-filename = 'data/threads-100-200_revV2.json'
+filename = 'data/threads-300-set1_features.json'
 all_threads = None # Store all threads from the local data file
 if not all_threads:
     with open(filename, 'r') as f:
