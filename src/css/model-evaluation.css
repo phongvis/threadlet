@@ -38,8 +38,8 @@
     font-weight: bold;
 }
 
-.pv-model-evaluation .thread .id.selected {
-    color: red;
+.pv-model-evaluation .thread.selected {
+    background-color: pink;
     font-weight: bold;
 }
 

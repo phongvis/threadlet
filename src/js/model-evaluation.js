@@ -77,7 +77,8 @@ pv.vis.modelEvaluation = function () {
             .text(d => d.threadId)
             .style('width', threadIdWidth + 'px')
             .on('click', function (d) {
-                threadContainer.selectAll('.id').classed('selected', x => x === d);
+                // threadContainer.selectAll('.id').classed('selected', x => x === d);
+                threadContainer.selectAll('.thread').classed('selected', x => x === d);
                 listeners.call('click', module, d);
             });
 
